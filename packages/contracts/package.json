@@ -1,0 +1,25 @@
+{
+  "name": "@starply/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "跨端共享的 API 契约类型（仅类型与常量，不含实现）",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

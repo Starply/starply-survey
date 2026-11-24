@@ -1,0 +1,25 @@
+{
+  "name": "@starply/questionnaire-core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "问卷 schema、条件逻辑与校验的纯 TypeScript 内核（占位，零框架依赖）",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

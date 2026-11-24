@@ -1,0 +1,23 @@
+// 设计令牌（--td-*）
+@import '@tdesign-ng/styles/theme.less';
+// 归一化
+@import '@tdesign-ng/styles/reset.less';
+// 按需引入当前已使用的组件样式（组件使用 ViewEncapsulation.None，样式为全局作用域）
+@import '@tdesign-ng/styles/components/icon.less';
+@import '@tdesign-ng/styles/components/button.less';
+@import '@tdesign-ng/styles/components/input.less';
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--td-bg-color-page, #f3f3f3);
+  color: var(--td-text-color-primary, #000000e6);
+  font-family:
+    'PingFang SC',
+    'Microsoft YaHei',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}

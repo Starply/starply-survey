@@ -1,0 +1,38 @@
+{
+  "name": "@starply/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "starply-survey Web 前端（Angular 22，SPA）",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test --watch=false",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "clean": "node -e \"const fs=require('node:fs');fs.rmSync('dist',{recursive:true,force:true});fs.rmSync('.angular',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "@angular/cdk": "catalog:",
+    "@angular/common": "catalog:",
+    "@angular/compiler": "catalog:",
+    "@angular/core": "catalog:",
+    "@angular/forms": "catalog:",
+    "@angular/platform-browser": "catalog:",
+    "@angular/router": "catalog:",
+    "@tdesign-ng/components": "catalog:",
+    "@tdesign-ng/icons": "catalog:",
+    "@tdesign-ng/styles": "catalog:",
+    "rxjs": "catalog:",
+    "tslib": "catalog:"
+  },
+  "devDependencies": {
+    "@angular/build": "catalog:",
+    "@angular/cli": "catalog:",
+    "@angular/compiler-cli": "catalog:",
+    "jsdom": "catalog:",
+    "less": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
