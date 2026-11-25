@@ -1,0 +1,34 @@
+/**
+ * 问卷领域类型的统一出口。
+ * API 契约、管理端编辑器与填写页都从这里引用，避免各端重复声明。
+ */
+export type {
+  ChoiceLayout,
+  ChoiceOption,
+  ConditionGroupNode,
+  ConditionNode,
+  ConditionOperator,
+  DateQuestionConfig,
+  DeepReadonly,
+  JumpRule,
+  JumpTarget,
+  LogicDefinition,
+  MultipleChoiceQuestionConfig,
+  NumberQuestionConfig,
+  PublishedSurveyVersion,
+  PublishSurveyOptions,
+  Question,
+  QuestionConditionRule,
+  QuestionGroup,
+  QuestionId,
+  QuestionType,
+  RatingQuestionConfig,
+  ReadonlySurveyContent,
+  SingleChoiceQuestionConfig,
+  SurveyContent,
+  SurveyDraft,
+  TextQuestionConfig,
+  TextareaQuestionConfig,
+  ValidationIssue,
+  ValidationResult,
+} from '@starply/questionnaire-core';

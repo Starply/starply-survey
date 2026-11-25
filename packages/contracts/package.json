@@ -15,9 +15,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "@starply/questionnaire-core": "workspace:*",
+    "tslib": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:"

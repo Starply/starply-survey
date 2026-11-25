@@ -27,7 +27,7 @@ starply-survey/
 ├─ packages/
 │  ├─ config/               # 共享 tsconfig / ESLint / Prettier 配置
 │  ├─ contracts/            # 跨端 API 契约类型（无实现）
-│  └─ questionnaire-core/   # 问卷内核占位（纯 TS，零框架依赖）
+│  └─ questionnaire-core/   # 问卷内核：题型模型、schema 校验、版本语义（纯 TS）
 ├─ docs/
 │  └─ technical-feasibility-assessment.md
 ├─ pnpm-workspace.yaml      # workspace + catalog + allowBuilds
@@ -123,7 +123,7 @@ pnpm test             # Web（Vitest via Angular）+ API（Vitest）
 ## 尚未解决的点
 
 1. 数据层（ORM、MySQL、Redis）尚未选型与接入。
-2. 认证、租户模型、问卷领域模型均未实现。
+2. 认证与租户模型未实现；问卷内核已提供领域模型、schema 校验与草稿/发布版本语义，但逻辑引擎尚未实现。
 3. SSR/预渲染在组件库场景下未验证；当前默认 SPA。
 4. 图标清单是否覆盖首版题型仍待核对。
 5. 部署脚本（systemd/Nginx/回滚/备份）尚未落地。
