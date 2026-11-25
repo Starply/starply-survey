@@ -1,6 +1,6 @@
 # starply-survey 技术可行性评估
 
-- 文档状态：Draft（第五轮，已确认默认语言与时区规则）
+- 文档状态：Draft（第六轮，已接入 TypeORM 数据层地基）
 - 初评日期：2026-11-24
 - 决策更新：2026-11-25
 - 评估范围：技术栈可行性、单仓与包组织、Angular/NestJS 关键选型与版本策略、MySQL/Redis 职责边界、多租户与部署约束、组件库 `@tdesign-ng` 核查与接入、Redis 部署与实测、风险与待确认事项
@@ -16,6 +16,7 @@
 | 2026-11-24 | 第三轮：确认共享库 + `tenant_id`、首版显示/跳转逻辑；实际核查 `@tdesign-ng` 三包（0.1.0 预发布），结论为“有条件采用”，新增 §8 核查结论与发布前修正清单 |
 | 2026-11-25 | 第四轮：确认 Redis 缓存与队列分实例（D9）；记录开发环境实测（MySQL 8.4.13、Redis 6.2.7）与 Redis 部署/安全/升级建议；关闭原 Redis 部署形态待确认项 |
 | 2026-11-25 | 第五轮：确认默认语言 `zh-CN`、默认时区 `Asia/Shanghai`；明确“UTC 存储、按租户时区展示”，关闭 Q10；API 配置新增 `DEFAULT_LANGUAGE` / `DEFAULT_TIME_ZONE` |
+| 2026-11-25 | 第六轮：确认 ORM 采用 TypeORM 1.1.3；接入 mysql2、迁移 CLI 与最小 `tenant` 实体，验证 MySQL 8.4 `caching_sha2_password`、DDL 事务与 UTC 时间戳处理 |
 
 ---
 
@@ -33,7 +34,7 @@
 | 技术栈整体 | 可行 | 四个组件成熟，社区与文档完备 |
 | pnpm 单仓 | 可行 | `apps/* + packages/*`，catalog 统一版本 |
 | Angular 选型 | 可行 | 建议 v22 基线；按管理端/填写页拆分渲染策略 |
-| NestJS 选型 | 可行 | 模块化适配多租户与问卷领域；ORM 待定 |
+| NestJS 选型 | 可行 | 模块化适配多租户与问卷领域；TypeORM 1.1.3 |
 | MySQL 8.x | 可行 | **建议 8.4 LTS**；8.0 已 EOL |
 | Redis 6.x | 有条件可行 | 实测 6.2.7；**缓存/队列分实例**；EOL 2027-04-01，需升级余量 |
 | 多租户 | 已定：共享库 + `tenant_id` | 应用层强隔离；复合索引与越权测试 |
@@ -56,6 +57,7 @@
 | D8 | 组件库 | 评估结论为**有条件采用** `@tdesign-ng@0.1.0` | 0.1.0 预发布；需完成 §8.10 的 Angular 22/SSR/zoneless 等前置条件 |
 | D9 | Redis 部署形态 | **缓存实例与队列实例分离**（2026-11-25 确认） | 缓存实例用可淘汰策略；队列实例保持 `noeviction` + AOF；两套端口、数据目录、ACL 与监控 |
 | D10 | 默认语言与时区 | **`zh-CN` / `Asia/Shanghai`**；时间以 UTC 存储，展示按租户时区换算 | 租户可覆盖语言与时区；数据库与 API 统一 UTC，展示层换算 |
+| D11 | ORM | **TypeORM 1.1.3**（精确锁定），驱动 mysql2 3.24.6 | 自管 DataSource；迁移 CLI；暂不引入 `@nestjs/typeorm` |
 
 ### 1.2 需要用户确认的建议项
 
@@ -261,18 +263,17 @@ apps/api/src/
 
 模块边界按业务能力划分，不按技术层划分；跨模块通过 service 接口调用，避免直接跨模块操作对方的表。
 
-### 6.3 ORM 选型（待定，需决策）
+### 6.3 ORM：TypeORM 1.1.3（已定）
 
-| 方案 | 优势 | 风险 |
-|---|---|---|
-| TypeORM 1.x | Nest 官方集成成熟；实体/迁移/QueryBuilder 齐全；`@nestjs/typeorm` 12 已声明兼容 `^1.0.0-dev` | 1.0 为 2026-05 才发布的新 major，社区资料与周边工具仍以 0.3.x 为主；需验证迁移、JSON 列、复杂查询表现 |
-| Prisma 7.x 稳定版 | 类型安全强、迁移体验好、生态活跃 | 查询灵活性弱于 QueryBuilder；动态 JSON 过滤受限；`latest` 当前指向 8.0.0-rc，必须显式锁稳定版 |
+2026-11-25 决定采用 **TypeORM 1.1.3**（精确锁定，未使用预发布版本），驱动为 **mysql2 3.24.6**。已完成最小 PoC：
 
-建议：
+- 真实连接 MySQL 8.4.13，`caching_sha2_password` 认证正常；连接字符集/排序规则为 `utf8mb4_0900_ai_ci`。
+- 迁移 CLI 的生成、执行、回滚均跑通；最小 `tenant` 实体完成建表、插入、查询、更新、删除。
+- **迁移事务**：MySQL DDL 隐式提交，使用 `migrationsTransactionMode: 'each'/'all'` 会出现“表已建但迁移记录未落库”；改为 `'none'` 后迁移记录与表状态一致。迁移失败需人工修复，执行前先备份。
+- **时间戳**：`@CreateDateColumn/@UpdateDateColumn` 与 `CURRENT_TIMESTAMP` 受服务器 session 时区影响；改为应用写入 `Date`，配合 mysql2 `timezone: 'Z'` 存 UTC。`repository.update` 不触发实体钩子，需显式传 `updatedAt`。
+- **未采用 `@nestjs/typeorm`**：自管 `DataSource` 生命周期，使数据库暂时不可用时 API 仍可启动，由 readiness 返回 503；后台每 5 秒重连。
 
-- 若团队更看重 Nest 原生集成与 SQL 可控性，选 TypeORM，但**先做 PoC**：JSON 答案列、分页统计、迁移回滚、连接池、多租户条件注入。
-- 若团队更看重类型安全与迁移纪律，选 Prisma 稳定版，并显式锁定 `7.x`（不要被 `latest` 的 RC 带走）。
-- 无论选哪种，**迁移文件必须进仓库**，生产环境禁止 `synchronize`。
+仍待验证：JSON 答案列、分页统计、复杂 QueryBuilder、多租户条件注入、连接池在真实并发下的表现。**迁移文件必须进仓库，生产禁止 `synchronize`。**
 
 ### 6.4 其他关键选型
 
@@ -669,7 +670,7 @@ MySQL 没有 RLS，隔离不能依赖数据库自动完成，必须把规则写�
 | R3a | icons 仅 65 个且无按图标入口 | 中 | 复杂题型图标缺失、全量打包 | 首版核对图标清单并做兜底；推动全量或按图标入口（§8.11） |
 | R3b | styles 包无 `exports`/`main`，组件为全局样式 | 中 | 深路径导入失败、全局样式冲突 | 固定引入顺序并文档化；构建期验证 Less 解析；推动补 `exports` |
 | R4 | 问卷 schema 演进导致历史答卷语义漂移 | 中高 | 统计口径错误、无法回放 | 发布版本不可变；答卷绑定 version；迁移脚本显式处理 |
-| R5 | ORM 选型反复 | 中 | 返工数据层 | 动工前用 PoC 对比 TypeORM 1.x 与 Prisma 稳定版；锁定一个 |
+| R5 | TypeORM 1.x 迁移与时间戳行为 | 中 | DDL 隐式提交导致迁移记录不一致；DB `CURRENT_TIMESTAMP` 受 session 时区影响 | `migrationsTransactionMode: 'none'`；时间戳由实体写入 UTC；迁移前备份；`repository.update` 显式传 `updatedAt` |
 | R6 | 误用 `latest` 安装到 RC 版本 | 中 | 生产不稳定 | 显式锁定稳定版；CI 校验 lockfile |
 | R7 | MySQL 8.0 已 EOL | 高 | 无安全补丁、合规风险 | 新项目直接使用 8.4 LTS；安装源与补丁计划入库 |
 | R8 | Redis 6.2 生命周期短，目标环境为 6.2.7 | 高 | 2027-04 后无官方安全补丁；落后于最终补丁 | 先升 6.2 最终补丁；预发验证 7.2/7.4/8.2 LTS；上线后第一季度完成升级 |
@@ -785,7 +786,7 @@ MySQL 没有 RLS，隔离不能依赖数据库自动完成，必须把规则写�
 5. **非 Docker 运维基线**：systemd unit、Nginx/TLS、发布目录与回滚脚本、MySQL/Redis 备份与恢复演练、日志轮转、监控告警；Redis 需为缓存/队列各准备独立 unit、端口、数据目录与监控项。
 6. **PoC 验证**：
    - Angular 22 + pnpm 12 的安装、构建、预渲染；
-   - NestJS 12 + 选定 ORM 的连接、迁移、JSON 查询；
+   - NestJS 12 + TypeORM 1.1.3 的连接、迁移、JSON 查询；
    - 多租户 Guard + 仓储隔离 + 越权测试；
    - Redis 6.2 上的缓存、限流、BullMQ 闭环，按 D9 使用两个实例并验证淘汰、AOF 恢复与积压告警；
    - 实际安装 `@tdesign-ng@0.1.0`（`components`/`styles`/`icons`），在 Angular 22 + pnpm 12 下完成构建、默认 SPA 运行、zoneless 与预渲染冒烟，并测量产物体积。
