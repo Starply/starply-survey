@@ -12,6 +12,7 @@ const CONFIG_KEYS = [
   'MYSQL_USER',
   'MYSQL_PASSWORD',
   'MYSQL_DATABASE',
+  'MYSQL_POOL_SIZE',
   'REDIS_HOST',
   'REDIS_PORT',
   'REDIS_PASSWORD',
@@ -46,6 +47,7 @@ describe('configuration', () => {
     expect(config.defaultTimeZone).toBe('Asia/Shanghai');
     expect(config.database.host).toBe('127.0.0.1');
     expect(config.database.port).toBe(3306);
+    expect(config.database.poolSize).toBe(10);
     expect(config.redis.port).toBe(6379);
   });
 

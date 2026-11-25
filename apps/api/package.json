@@ -10,6 +10,9 @@
     "start:prod": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "db:migrate": "pnpm build && node --env-file=.env ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
+    "db:revert": "pnpm build && node --env-file=.env ./node_modules/typeorm/cli.js migration:revert -d dist/database/data-source.js",
+    "db:migration:generate": "pnpm build && node --env-file=.env ./node_modules/typeorm/cli.js migration:generate -d dist/database/data-source.js",
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "dependencies": {
@@ -18,9 +21,11 @@
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "catalog:",
     "@starply/contracts": "workspace:*",
+    "mysql2": "catalog:",
     "reflect-metadata": "catalog:",
     "rxjs": "catalog:",
-    "tslib": "catalog:"
+    "tslib": "catalog:",
+    "typeorm": "catalog:"
   },
   "devDependencies": {
     "@nestjs/cli": "catalog:",

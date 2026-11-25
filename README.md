@@ -2,18 +2,18 @@
 
 开源的现代 Web 端问卷系统。目标是使用 Angular + NestJS 构建多租户、中英双语的问卷平台，前后端同仓，使用 pnpm 组织。
 
-当前仓库处于**基础骨架阶段**：可安装、可构建、可本地启动，但尚未实现业务功能，数据层也未绑定 ORM。
+当前仓库处于**基础骨架阶段**：可安装、可构建、可本地启动；数据层已接入 TypeORM 并完成最小实体与迁移，业务功能尚未实现。
 
 ## 技术栈
 
-| 层        | 选型                                                          | 当前状态                 |
-| --------- | ------------------------------------------------------------- | ------------------------ |
-| 前端      | Angular 22.3.0（standalone、signals、默认 zoneless，SPA）     | 已接入                   |
-| 组件库    | `@tdesign-ng/components`、`styles`、`icons` 0.1.0（精确锁定） | 已接入并完成首轮 PoC     |
-| 后端      | NestJS 12.6.0                                                 | 已接入，仅健康检查       |
-| 数据库    | MySQL 8.x（建议 8.4 LTS）                                     | 仅配置占位，未接入 ORM   |
-| 缓存/队列 | Redis 6.2+                                                    | 仅配置占位，未接入客户端 |
-| 包管理    | pnpm 12.21.0 + catalog                                        | 已配置                   |
+| 层        | 选型                                                          | 当前状态                         |
+| --------- | ------------------------------------------------------------- | -------------------------------- |
+| 前端      | Angular 22.3.0（standalone、signals、默认 zoneless，SPA）     | 已接入                           |
+| 组件库    | `@tdesign-ng/components`、`styles`、`icons` 0.1.0（精确锁定） | 已接入并完成首轮 PoC             |
+| 后端      | NestJS 12.6.0                                                 | 已接入，健康检查 + 数据源        |
+| 数据库    | MySQL 8.4 + TypeORM 1.1.3 + mysql2 3.24.6                     | 已接入，最小 `tenant` 实体与迁移 |
+| 缓存/队列 | Redis 6.2+                                                    | 仅配置占位，未接入客户端         |
+| 包管理    | pnpm 12.21.0 + catalog                                        | 已配置                           |
 
 版本生命周期与决策依据见 [技术可行性评估](docs/technical-feasibility-assessment.md)。
 
@@ -23,7 +23,7 @@
 starply-survey/
 ├─ apps/
 │  ├─ web/                  # Angular 22 SPA（管理端 + 公开填写页的壳）
-│  └─ api/                  # NestJS API，当前只有 /health
+│  └─ api/                  # NestJS API：健康检查 + TypeORM 数据源
 ├─ packages/
 │  ├─ config/               # 共享 tsconfig / ESLint / Prettier 配置
 │  ├─ contracts/            # 跨端 API 契约类型（无实现）
@@ -61,12 +61,16 @@ pnpm dev:web
 
 # 3. API（http://localhost:25200/health）
 cp apps/api/.env.example apps/api/.env   # Windows: Copy-Item
+pnpm --filter @starply/api db:migrate    # 首次启动前建表
 pnpm dev:api
 ```
 
 开发端口：Web 为 **5200**，API 为 **25200**。Web 开发服务器通过 [proxy.conf.json](apps/web/proxy.conf.json) 把 `/api/*` 转发到 `http://127.0.0.1:25200` 并去掉 `/api` 前缀，例如 `/api/health` → `/health`。
 
-健康检查返回：
+健康检查：
+
+- `GET /health`、`GET /health/live`：liveness，只表示进程可用，不依赖数据库。
+- `GET /health/ready`：readiness，执行 `SELECT 1`；数据库不可用时返回 **503**，响应体仍包含 `checks.database`。
 
 ```json
 {
@@ -75,7 +79,10 @@ pnpm dev:api
   "version": "0.0.0",
   "env": "development",
   "uptime": 1.23,
-  "timestamp": "2026-11-24T13:00:00.000Z"
+  "timestamp": "2026-11-24T13:00:00.000Z",
+  "checks": {
+    "database": { "status": "up", "latencyMs": 2 }
+  }
 }
 ```
 
@@ -89,13 +96,21 @@ pnpm format           # Prettier 写入
 pnpm test             # Web（Vitest via Angular）+ API（Vitest）
 ```
 
-## 数据层状态
+## 数据层（TypeORM）
 
-本轮**不绑定** Prisma / TypeORM，也不连接 MySQL / Redis：
+- 版本：**TypeORM 1.1.3**、**mysql2 3.24.6**，精确锁定；不使用预发布版本。
+- 连接：`apps/api/src/database/data-source-options.ts`，字符集/排序规则显式 `utf8mb4_0900_ai_ci`，`timezone: 'Z'`，连接池默认 10（`MYSQL_POOL_SIZE`），`synchronize` 永久关闭。
+- 迁移命令（在仓库根目录执行，需先配置 `apps/api/.env`）：
 
-- `apps/api/.env.example` 只声明 `MYSQL_*`、`REDIS_*` 配置位；
-- `apps/api/src/config/configuration.ts` 只做环境变量解析与默认值；
-- 数据层选型确认后再引入 ORM、迁移与 Redis 客户端。
+```bash
+pnpm --filter @starply/api db:migrate
+pnpm --filter @starply/api db:revert
+pnpm --filter @starply/api db:migration:generate src/database/migrations/AddXxx
+```
+
+- MySQL DDL 会隐式提交，迁移使用 `migrationsTransactionMode: 'none'`；迁移失败需人工修复，执行前先备份。
+- 时间戳由实体 `BeforeInsert`/`BeforeUpdate` 写入 UTC；`repository.update` 不触发实体钩子，更新时需显式传 `updatedAt: new Date()`。
+- 数据库不可用时 API 仍会启动并每 5 秒重连，由 `/health/ready` 反映状态。
 
 ## 组件库接入说明
 
@@ -122,11 +137,12 @@ pnpm test             # Web（Vitest via Angular）+ API（Vitest）
 
 ## 尚未解决的点
 
-1. 数据层（ORM、MySQL、Redis）尚未选型与接入。
+1. Redis 客户端、BullMQ 与缓存/队列分实例尚未接入。
 2. 认证与租户模型未实现；问卷内核已提供领域模型、schema 校验与草稿/发布版本语义，但逻辑引擎尚未实现。
 3. SSR/预渲染在组件库场景下未验证；当前默认 SPA。
 4. 图标清单是否覆盖首版题型仍待核对。
 5. 部署脚本（systemd/Nginx/回滚/备份）尚未落地。
+6. TypeORM 的 JSON 列、分页统计、复杂查询与多租户条件注入仍待 PoC。
 
 ## 许可
 

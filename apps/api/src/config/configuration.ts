@@ -4,6 +4,7 @@ export interface DatabaseConfig {
   user: string;
   password: string;
   database: string;
+  poolSize: number;
 }
 
 export interface RedisConfig {
@@ -41,6 +42,7 @@ export default (): AppConfiguration => {
       user: env['MYSQL_USER'] ?? '',
       password: env['MYSQL_PASSWORD'] ?? '',
       database: env['MYSQL_DATABASE'] ?? '',
+      poolSize: Number(env['MYSQL_POOL_SIZE'] ?? 10),
     },
     redis: {
       host: env['REDIS_HOST'] ?? '127.0.0.1',
