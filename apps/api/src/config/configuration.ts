@@ -15,6 +15,10 @@ export interface RedisConfig {
 export interface AppConfiguration {
   nodeEnv: string;
   port: number;
+  /** 租户未配置语言时的默认语言。 */
+  defaultLanguage: string;
+  /** 租户未配置时区时的默认时区；数据库时间仍以 UTC 存储。 */
+  defaultTimeZone: string;
   database: DatabaseConfig;
   redis: RedisConfig;
 }
@@ -29,6 +33,8 @@ export default (): AppConfiguration => {
   return {
     nodeEnv: env['NODE_ENV'] ?? 'development',
     port: Number(env['PORT'] ?? 25200),
+    defaultLanguage: env['DEFAULT_LANGUAGE'] || 'zh-CN',
+    defaultTimeZone: env['DEFAULT_TIME_ZONE'] || 'Asia/Shanghai',
     database: {
       host: env['MYSQL_HOST'] ?? '127.0.0.1',
       port: Number(env['MYSQL_PORT'] ?? 3306),

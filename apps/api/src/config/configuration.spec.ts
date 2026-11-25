@@ -5,6 +5,8 @@ import configuration from './configuration';
 const CONFIG_KEYS = [
   'NODE_ENV',
   'PORT',
+  'DEFAULT_LANGUAGE',
+  'DEFAULT_TIME_ZONE',
   'MYSQL_HOST',
   'MYSQL_PORT',
   'MYSQL_USER',
@@ -40,6 +42,8 @@ describe('configuration', () => {
 
     expect(config.nodeEnv).toBe('development');
     expect(config.port).toBe(25200);
+    expect(config.defaultLanguage).toBe('zh-CN');
+    expect(config.defaultTimeZone).toBe('Asia/Shanghai');
     expect(config.database.host).toBe('127.0.0.1');
     expect(config.database.port).toBe(3306);
     expect(config.redis.port).toBe(6379);
@@ -48,6 +52,8 @@ describe('configuration', () => {
   it('reads overrides from env', () => {
     process.env['NODE_ENV'] = 'test';
     process.env['PORT'] = '4000';
+    process.env['DEFAULT_LANGUAGE'] = 'en';
+    process.env['DEFAULT_TIME_ZONE'] = 'UTC';
     process.env['MYSQL_HOST'] = 'db.local';
     process.env['REDIS_PORT'] = '6380';
 
@@ -55,6 +61,8 @@ describe('configuration', () => {
 
     expect(config.nodeEnv).toBe('test');
     expect(config.port).toBe(4000);
+    expect(config.defaultLanguage).toBe('en');
+    expect(config.defaultTimeZone).toBe('UTC');
     expect(config.database.host).toBe('db.local');
     expect(config.redis.port).toBe(6380);
   });
