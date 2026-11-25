@@ -1,3 +1,4 @@
+import { isValidLanguageTag, resolveLocalizedText, type LocalizedText } from './localization';
 import {
   isConditionOperator,
   isQuestionType,
@@ -100,9 +101,65 @@ function readId(
   return value;
 }
 
+/**
+ * 校验按语言键索引的文案对象。
+ * 默认语言缺失或为空视为错误，因为回退后仍拿不到文案。
+ */
+function validateLocalizedText(
+  value: unknown,
+  path: string,
+  defaultLanguage: string | undefined,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    addIssue(issues, 'INVALID_LOCALIZED_TEXT', '多语言文本必须是按语言键索引的对象', path);
+    return;
+  }
+
+  const entries = Object.entries(value);
+  if (entries.length === 0) {
+    addIssue(issues, 'EMPTY_LOCALIZED_TEXT', '多语言文本至少需要一个语言版本', path);
+    return;
+  }
+
+  for (const [language, text] of entries) {
+    if (!isValidLanguageTag(language)) {
+      addIssue(
+        issues,
+        'INVALID_LANGUAGE_TAG',
+        `语言键不合法：${language}`,
+        `${path}["${language}"]`,
+      );
+    }
+    if (typeof text !== 'string') {
+      addIssue(issues, 'INVALID_LOCALIZED_TEXT', '文案必须是字符串', `${path}["${language}"]`);
+    } else if (text.trim().length === 0) {
+      addIssue(
+        issues,
+        'EMPTY_LOCALIZED_TEXT',
+        `语言 ${language} 的文案不能为空`,
+        `${path}["${language}"]`,
+      );
+    }
+  }
+
+  if (defaultLanguage && isValidLanguageTag(defaultLanguage)) {
+    const fallback = resolveLocalizedText(value as LocalizedText, defaultLanguage, defaultLanguage);
+    if (!fallback) {
+      addIssue(
+        issues,
+        'MISSING_DEFAULT_LANGUAGE_TEXT',
+        `缺少默认语言 ${defaultLanguage} 的文案`,
+        `${path}["${defaultLanguage}"]`,
+      );
+    }
+  }
+}
+
 function validateOptions(
   config: Record<string, unknown>,
   path: string,
+  defaultLanguage: string | undefined,
   issues: ValidationIssue[],
 ): number {
   const options = config['options'];
@@ -132,8 +189,10 @@ function validateOptions(
       optionIds.add(id);
     }
 
-    if (!isNonEmptyString(option['label'])) {
+    if (option['label'] === undefined) {
       addIssue(issues, 'INVALID_CHOICE_OPTIONS', '选项 label 不能为空', `${optionPath}.label`);
+    } else {
+      validateLocalizedText(option['label'], `${optionPath}.label`, defaultLanguage, issues);
     }
 
     const value = option['value'];
@@ -174,6 +233,7 @@ function validateOptions(
 function validateTextConfig(
   config: Record<string, unknown>,
   path: string,
+  defaultLanguage: string | undefined,
   issues: ValidationIssue[],
 ): void {
   const min = config['minLength'];
@@ -188,14 +248,15 @@ function validateTextConfig(
   if (isInteger(min) && isInteger(max) && min > max) {
     addIssue(issues, 'INVALID_TEXT_RANGE', 'minLength 不能大于 maxLength', path);
   }
-  if (config['placeholder'] !== undefined && typeof config['placeholder'] !== 'string') {
-    addIssue(issues, 'INVALID_STRUCTURE', 'placeholder 必须是字符串', `${path}.placeholder`);
+  if (config['placeholder'] !== undefined) {
+    validateLocalizedText(config['placeholder'], `${path}.placeholder`, defaultLanguage, issues);
   }
 }
 
 function validateNumberConfig(
   config: Record<string, unknown>,
   path: string,
+  defaultLanguage: string | undefined,
   issues: ValidationIssue[],
 ): void {
   const min = config['min'];
@@ -213,6 +274,9 @@ function validateNumberConfig(
   }
   if (step !== undefined && (!isFiniteNumber(step) || step <= 0)) {
     addIssue(issues, 'INVALID_NUMBER_RANGE', 'step 必须是大于 0 的数字', `${path}.step`);
+  }
+  if (config['placeholder'] !== undefined) {
+    validateLocalizedText(config['placeholder'], `${path}.placeholder`, defaultLanguage, issues);
   }
 }
 
@@ -238,6 +302,7 @@ function validateDateConfig(
 function validateRatingConfig(
   config: Record<string, unknown>,
   path: string,
+  defaultLanguage: string | undefined,
   issues: ValidationIssue[],
 ): void {
   const min = config['min'] ?? 1;
@@ -291,8 +356,10 @@ function validateRatingConfig(
     } else {
       seen.add(value);
     }
-    if (!isNonEmptyString(label['label'])) {
+    if (label['label'] === undefined) {
       addIssue(issues, 'INVALID_RATING_RANGE', '评分标签 label 不能为空', `${labelPath}.label`);
+    } else {
+      validateLocalizedText(label['label'], `${labelPath}.label`, defaultLanguage, issues);
     }
   });
 }
@@ -347,15 +414,16 @@ function validateQuestionConfig(
   type: string,
   config: Record<string, unknown>,
   path: string,
+  defaultLanguage: string | undefined,
   issues: ValidationIssue[],
 ): void {
   switch (type) {
     case 'text':
     case 'email':
-      validateTextConfig(config, path, issues);
+      validateTextConfig(config, path, defaultLanguage, issues);
       break;
     case 'textarea': {
-      validateTextConfig(config, path, issues);
+      validateTextConfig(config, path, defaultLanguage, issues);
       const rows = config['rows'];
       if (rows !== undefined && (!isInteger(rows) || rows <= 0)) {
         addIssue(issues, 'INVALID_TEXT_RANGE', 'rows 必须是正整数', `${path}.rows`);
@@ -363,21 +431,21 @@ function validateQuestionConfig(
       break;
     }
     case 'number':
-      validateNumberConfig(config, path, issues);
+      validateNumberConfig(config, path, defaultLanguage, issues);
       break;
     case 'date':
       validateDateConfig(config, path, issues);
       break;
     case 'single_choice':
-      validateOptions(config, path, issues);
+      validateOptions(config, path, defaultLanguage, issues);
       break;
     case 'multi_choice': {
-      const optionCount = validateOptions(config, path, issues);
+      const optionCount = validateOptions(config, path, defaultLanguage, issues);
       validateSelectionRange(config, optionCount, path, issues);
       break;
     }
     case 'rating':
-      validateRatingConfig(config, path, issues);
+      validateRatingConfig(config, path, defaultLanguage, issues);
       break;
     default:
       break;
@@ -576,9 +644,31 @@ export function validateSurveyContent(content: ReadonlySurveyContent): Validatio
     return summarize(issues);
   }
 
+  const defaultLanguageRaw = raw['defaultLanguage'];
+  let defaultLanguage: string | undefined;
+  if (defaultLanguageRaw === undefined) {
+    addIssue(issues, 'MISSING_DEFAULT_LANGUAGE', 'defaultLanguage 不能为空', 'defaultLanguage');
+  } else if (!isValidLanguageTag(defaultLanguageRaw)) {
+    addIssue(
+      issues,
+      'INVALID_LANGUAGE_TAG',
+      'defaultLanguage 必须是合法语言键，如 zh-CN、en',
+      'defaultLanguage',
+    );
+  } else {
+    defaultLanguage = defaultLanguageRaw;
+  }
+
   const title = raw['title'];
-  if (!isNonEmptyString(title)) {
+  if (title === undefined) {
     addIssue(issues, 'MISSING_TITLE', '问卷标题不能为空', 'title');
+  } else {
+    validateLocalizedText(title, 'title', defaultLanguage, issues);
+  }
+
+  const description = raw['description'];
+  if (description !== undefined) {
+    validateLocalizedText(description, 'description', defaultLanguage, issues);
   }
 
   const groups = raw['groups'];
@@ -611,8 +701,16 @@ export function validateSurveyContent(content: ReadonlySurveyContent): Validatio
       groupIds.add(groupId);
     }
 
-    if (group['title'] !== undefined && typeof group['title'] !== 'string') {
-      addIssue(issues, 'INVALID_STRUCTURE', '分组标题必须是字符串', `${groupPath}.title`);
+    if (group['title'] !== undefined) {
+      validateLocalizedText(group['title'], `${groupPath}.title`, defaultLanguage, issues);
+    }
+    if (group['description'] !== undefined) {
+      validateLocalizedText(
+        group['description'],
+        `${groupPath}.description`,
+        defaultLanguage,
+        issues,
+      );
     }
 
     const questions = group['questions'];
@@ -648,8 +746,19 @@ export function validateSurveyContent(content: ReadonlySurveyContent): Validatio
         questionIds.add(questionId);
       }
 
-      if (!isNonEmptyString(question['title'])) {
+      if (question['title'] === undefined) {
         addIssue(issues, 'MISSING_TITLE', '题目标题不能为空', `${questionPath}.title`);
+      } else {
+        validateLocalizedText(question['title'], `${questionPath}.title`, defaultLanguage, issues);
+      }
+
+      if (question['description'] !== undefined) {
+        validateLocalizedText(
+          question['description'],
+          `${questionPath}.description`,
+          defaultLanguage,
+          issues,
+        );
       }
 
       if (question['required'] !== undefined && typeof question['required'] !== 'boolean') {
@@ -675,7 +784,7 @@ export function validateSurveyContent(content: ReadonlySurveyContent): Validatio
         addIssue(issues, 'INVALID_STRUCTURE', 'config 必须是对象', `${questionPath}.config`);
         return;
       }
-      validateQuestionConfig(type, config, `${questionPath}.config`, issues);
+      validateQuestionConfig(type, config, `${questionPath}.config`, defaultLanguage, issues);
 
       if (question['logic'] !== undefined) {
         logicEntries.push({ logic: question['logic'], path: `${questionPath}.logic` });

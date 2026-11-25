@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { LocalizedText } from './localization';
 import {
   QUESTIONNAIRE_SCHEMA_VERSION,
   type PublishedSurveyVersion,
@@ -8,20 +9,25 @@ import {
 import { SurveyValidationError } from './validation';
 import { createSurveyDraft, publishSurvey } from './versioning';
 
+const zh = (text: string, en?: string): LocalizedText =>
+  en === undefined ? { 'zh-CN': text } : { 'zh-CN': text, en };
+
 const validDraft = (): SurveyDraft =>
   createSurveyDraft({
     surveyId: 'survey-1',
-    title: '客户满意度调查',
+    defaultLanguage: 'zh-CN',
+    title: zh('客户满意度调查', 'Customer satisfaction survey'),
+    description: zh('请根据实际体验作答', 'Please answer based on your experience'),
     groups: [
       {
         id: 'g1',
-        title: '基本信息',
+        title: zh('基本信息', 'Basic information'),
         questions: [
-          { id: 'q1', type: 'text', title: '姓名', config: { maxLength: 20 } },
+          { id: 'q1', type: 'text', title: zh('姓名', 'Name'), config: { maxLength: 20 } },
           {
             id: 'q2',
             type: 'rating',
-            title: '满意度',
+            title: zh('满意度', 'Satisfaction'),
             config: { min: 1, max: 5 },
           },
         ],
@@ -36,17 +42,19 @@ const options = {
 };
 
 describe('createSurveyDraft', () => {
-  it('创建带 kind 标记的草稿', () => {
+  it('创建带 kind 标记与默认语言的草稿', () => {
     const draft = createSurveyDraft({
       surveyId: 'survey-1',
-      title: '问卷',
-      description: '说明',
-      groups: [{ id: 'g1', questions: [{ id: 'q1', type: 'text', title: '题', config: {} }] }],
+      defaultLanguage: 'zh-CN',
+      title: zh('问卷', 'Survey'),
+      description: zh('说明'),
+      groups: [{ id: 'g1', questions: [{ id: 'q1', type: 'text', title: zh('题'), config: {} }] }],
     });
 
     expect(draft.kind).toBe('draft');
     expect(draft.surveyId).toBe('survey-1');
-    expect(draft.content.description).toBe('说明');
+    expect(draft.content.defaultLanguage).toBe('zh-CN');
+    expect(draft.content.description?.['zh-CN']).toBe('说明');
   });
 });
 
@@ -60,7 +68,8 @@ describe('publishSurvey', () => {
     expect(published.version).toBe(1);
     expect(published.schemaVersion).toBe(QUESTIONNAIRE_SCHEMA_VERSION);
     expect(published.publishedAt).toBe(options.publishedAt);
-    expect(published.content.title).toBe('客户满意度调查');
+    expect(published.content.title['zh-CN']).toBe('客户满意度调查');
+    expect(published.content.title['en']).toBe('Customer satisfaction survey');
   });
 
   it('缺省 publishedAt 与 schemaVersion', () => {
@@ -75,6 +84,7 @@ describe('publishSurvey', () => {
 
     expect(Object.isFrozen(published)).toBe(true);
     expect(Object.isFrozen(published.content)).toBe(true);
+    expect(Object.isFrozen(published.content.title)).toBe(true);
     expect(Object.isFrozen(published.content.groups)).toBe(true);
     expect(Object.isFrozen(published.content.groups[0]?.questions)).toBe(true);
     expect(Object.isFrozen(published.content.groups[0]?.questions[0]?.config)).toBe(true);
@@ -84,31 +94,36 @@ describe('publishSurvey', () => {
     const draft = validDraft();
     const published = publishSurvey(draft, options);
 
-    draft.content.title = '修改后的标题';
+    draft.content.title['zh-CN'] = '修改后的标题';
     draft.content.groups[0]?.questions.push({
       id: 'q3',
       type: 'text',
-      title: '新增',
+      title: zh('新增'),
       config: {},
     });
 
-    expect(published.content.title).toBe('客户满意度调查');
+    expect(published.content.title['zh-CN']).toBe('客户满意度调查');
     expect(published.content.groups[0]?.questions).toHaveLength(2);
   });
 
   it('拒绝修改已发布内容', () => {
     const published = publishSurvey(validDraft(), options);
     const mutable = published as unknown as PublishedSurveyVersion & {
-      content: { title: string };
+      content: { title: Record<string, string> };
     };
 
     expect(() => {
-      mutable.content.title = '篡改';
+      mutable.content.title['zh-CN'] = '篡改';
     }).toThrow();
   });
 
   it('草稿非法时抛出 SurveyValidationError', () => {
-    const draft = createSurveyDraft({ surveyId: 'survey-1', title: '空问卷', groups: [] });
+    const draft = createSurveyDraft({
+      surveyId: 'survey-1',
+      defaultLanguage: 'zh-CN',
+      title: zh('空问卷'),
+      groups: [],
+    });
 
     expect(() => publishSurvey(draft, options)).toThrow(SurveyValidationError);
 
@@ -119,6 +134,17 @@ describe('publishSurvey', () => {
       const issues = (error as SurveyValidationError).issues;
       expect(issues.some((item) => item.code === 'EMPTY_SURVEY')).toBe(true);
     }
+  });
+
+  it('缺少默认语言文案时拒绝发布', () => {
+    const draft = createSurveyDraft({
+      surveyId: 'survey-1',
+      defaultLanguage: 'zh-CN',
+      title: { en: 'English only' } as unknown as LocalizedText,
+      groups: [{ id: 'g1', questions: [{ id: 'q1', type: 'text', title: zh('题'), config: {} }] }],
+    });
+
+    expect(() => publishSurvey(draft, options)).toThrow(SurveyValidationError);
   });
 
   it('校验版本号与 versionId', () => {

@@ -1,3 +1,4 @@
+import type { LanguageTag, LocalizedText } from './localization';
 import {
   QUESTIONNAIRE_SCHEMA_VERSION,
   type PublishedSurveyVersion,
@@ -11,13 +12,15 @@ import { SurveyValidationError, validateSurveyContent } from './validation';
 
 export interface CreateSurveyDraftInput {
   surveyId: string;
-  title: string;
-  description?: string;
+  defaultLanguage: LanguageTag;
+  title: LocalizedText;
+  description?: LocalizedText;
   groups: SurveyContent['groups'];
 }
 
 export function createSurveyDraft(input: CreateSurveyDraftInput): SurveyDraft {
   const content: SurveyContent = {
+    defaultLanguage: input.defaultLanguage,
     title: input.title,
     groups: input.groups,
   };

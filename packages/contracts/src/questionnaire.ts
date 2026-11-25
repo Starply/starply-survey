@@ -12,6 +12,8 @@ export type {
   DeepReadonly,
   JumpRule,
   JumpTarget,
+  LanguageTag,
+  LocalizedText,
   LogicDefinition,
   MultipleChoiceQuestionConfig,
   NumberQuestionConfig,

@@ -3,6 +3,8 @@
  * 该文件同时被前端编辑器、后端服务与 packages/contracts 复用。
  */
 
+import type { LanguageTag, LocalizedText } from './localization';
+
 export type SurveyId = string;
 export type SurveyVersionId = string;
 export type QuestionGroupId = string;
@@ -32,7 +34,7 @@ export function isQuestionType(value: unknown): value is QuestionType {
 // ---------------------------------------------------------------------------
 
 export interface TextQuestionConfig {
-  placeholder?: string;
+  placeholder?: LocalizedText;
   minLength?: number;
   maxLength?: number;
 }
@@ -42,7 +44,7 @@ export interface TextareaQuestionConfig extends TextQuestionConfig {
 }
 
 export interface NumberQuestionConfig {
-  placeholder?: string;
+  placeholder?: LocalizedText;
   min?: number;
   max?: number;
   integer?: boolean;
@@ -57,7 +59,7 @@ export interface DateQuestionConfig {
 
 export interface ChoiceOption {
   id: OptionId;
-  label: string;
+  label: LocalizedText;
   /** 提交值；缺省时使用 id。 */
   value?: string;
   /** 多选时标记“互斥项”，如“以上都不是”。 */
@@ -82,7 +84,7 @@ export interface MultipleChoiceQuestionConfig {
 
 export interface RatingLabel {
   value: number;
-  label: string;
+  label: LocalizedText;
 }
 
 export interface RatingQuestionConfig {
@@ -167,8 +169,8 @@ export interface LogicDefinition {
 export interface QuestionBase<TType extends string, TConfig> {
   id: QuestionId;
   type: TType;
-  title: string;
-  description?: string;
+  title: LocalizedText;
+  description?: LocalizedText;
   /** 缺省视为 false。 */
   required?: boolean;
   config: TConfig;
@@ -196,15 +198,17 @@ export type Question =
 
 export interface QuestionGroup {
   id: QuestionGroupId;
-  title?: string;
-  description?: string;
+  title?: LocalizedText;
+  description?: LocalizedText;
   questions: Question[];
   logic?: LogicDefinition;
 }
 
 export interface SurveyContent {
-  title: string;
-  description?: string;
+  /** 问卷默认语言，同时作为文案回退的最终目标。 */
+  defaultLanguage: LanguageTag;
+  title: LocalizedText;
+  description?: LocalizedText;
   groups: QuestionGroup[];
 }
 
@@ -266,6 +270,11 @@ export type ValidationIssueCode =
   | 'DUPLICATE_GROUP_ID'
   | 'DUPLICATE_QUESTION_ID'
   | 'MISSING_TITLE'
+  | 'MISSING_DEFAULT_LANGUAGE'
+  | 'INVALID_LANGUAGE_TAG'
+  | 'INVALID_LOCALIZED_TEXT'
+  | 'EMPTY_LOCALIZED_TEXT'
+  | 'MISSING_DEFAULT_LANGUAGE_TEXT'
   | 'UNSUPPORTED_QUESTION_TYPE'
   | 'INVALID_CHOICE_OPTIONS'
   | 'DUPLICATE_OPTION_ID'

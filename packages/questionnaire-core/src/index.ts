@@ -3,6 +3,7 @@
  * 纯 TypeScript，不依赖 Angular、NestJS 或数据库。
  */
 
+export * from './localization';
 export * from './types';
 export * from './validation';
 export * from './versioning';

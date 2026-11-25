@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { LocalizedText } from './localization';
 import type {
   ConditionNode,
   MultipleChoiceQuestion,
@@ -10,21 +11,24 @@ import type {
 import { validateSurveyContent, validateSurveyDraft } from './validation';
 import { createSurveyDraft } from './versioning';
 
+const zh = (text: string, en?: string): LocalizedText =>
+  en === undefined ? { 'zh-CN': text } : { 'zh-CN': text, en };
+
 const textQuestion = (id = 'q_text'): Question => ({
   id,
   type: 'text',
-  title: '姓名',
+  title: zh('姓名'),
   config: { maxLength: 20 },
 });
 
 const choiceQuestion = (id = 'q_choice'): Question => ({
   id,
   type: 'single_choice',
-  title: '选择一项',
+  title: zh('选择一项', 'Choose one'),
   config: {
     options: [
-      { id: 'a', label: '选项 A' },
-      { id: 'b', label: '选项 B' },
+      { id: 'a', label: zh('选项 A', 'Option A') },
+      { id: 'b', label: zh('选项 B', 'Option B') },
     ],
   },
 });
@@ -32,12 +36,12 @@ const choiceQuestion = (id = 'q_choice'): Question => ({
 const multiQuestion = (id = 'q_multi'): MultipleChoiceQuestion => ({
   id,
   type: 'multi_choice',
-  title: '选择多项',
+  title: zh('选择多项', 'Choose multiple'),
   config: {
     options: [
-      { id: 'a', label: 'A' },
-      { id: 'b', label: 'B' },
-      { id: 'c', label: 'C' },
+      { id: 'a', label: zh('A') },
+      { id: 'b', label: zh('B') },
+      { id: 'c', label: zh('C') },
     ],
     minSelections: 1,
     maxSelections: 2,
@@ -47,15 +51,20 @@ const multiQuestion = (id = 'q_multi'): MultipleChoiceQuestion => ({
 const ratingQuestion = (id = 'q_rating'): Question => ({
   id,
   type: 'rating',
-  title: '满意度',
+  title: zh('满意度', 'Satisfaction'),
   config: { min: 1, max: 5 },
 });
 
 const groupWith = (questions: Question[], id = 'g1'): QuestionGroup => ({ id, questions });
 
-const surveyWith = (groups: QuestionGroup[]): SurveyContent => ({
-  title: '测试问卷',
+const surveyWith = (
+  groups: QuestionGroup[],
+  overrides: Partial<SurveyContent> = {},
+): SurveyContent => ({
+  defaultLanguage: 'zh-CN',
+  title: zh('测试问卷', 'Test survey'),
   groups,
+  ...overrides,
 });
 
 const codesOf = (issues: readonly { code: string }[]): string[] => issues.map((item) => item.code);
@@ -95,6 +104,100 @@ describe('validateSurveyContent', () => {
     expect(result.errors).toHaveLength(0);
   });
 
+  it('允许只提供默认语言，其他语言可缺失并回退', () => {
+    const result = validateSurveyContent(
+      surveyWith([groupWith([textQuestion()])], {
+        title: { 'zh-CN': '只有中文' },
+        description: { 'zh-CN': '说明' },
+      }),
+    );
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('要求问卷声明默认语言', () => {
+    const content = surveyWith([groupWith([textQuestion()])]);
+    delete (content as { defaultLanguage?: string }).defaultLanguage;
+
+    const result = validateSurveyContent(content as SurveyContent);
+
+    expect(codesOf(result.issues)).toContain('MISSING_DEFAULT_LANGUAGE');
+  });
+
+  it('拒绝非法的默认语言键', () => {
+    const result = validateSurveyContent(
+      surveyWith([groupWith([textQuestion()])], { defaultLanguage: 'zh_CN' }),
+    );
+
+    expect(codesOf(result.issues)).toContain('INVALID_LANGUAGE_TAG');
+  });
+
+  it('拒绝非法的语言键', () => {
+    const result = validateSurveyContent(
+      surveyWith([groupWith([textQuestion()])], {
+        title: { zh_CN: '标题' } as unknown as LocalizedText,
+      }),
+    );
+
+    expect(codesOf(result.issues)).toContain('INVALID_LANGUAGE_TAG');
+  });
+
+  it('默认语言文案缺失时报错', () => {
+    const result = validateSurveyContent(
+      surveyWith([groupWith([textQuestion()])], {
+        title: { en: 'Only English' },
+      }),
+    );
+
+    expect(codesOf(result.issues)).toContain('MISSING_DEFAULT_LANGUAGE_TEXT');
+  });
+
+  it('默认语言文案为空时报错', () => {
+    const result = validateSurveyContent(
+      surveyWith([groupWith([textQuestion()])], {
+        title: { 'zh-CN': '   ' },
+      }),
+    );
+
+    expect(codesOf(result.issues)).toEqual(
+      expect.arrayContaining(['EMPTY_LOCALIZED_TEXT', 'MISSING_DEFAULT_LANGUAGE_TEXT']),
+    );
+  });
+
+  it('选项与占位提示也要求默认语言文案', () => {
+    const invalidOption = {
+      id: 'q_choice',
+      type: 'single_choice',
+      title: zh('单选'),
+      config: {
+        options: [
+          { id: 'a', label: { en: 'A' } },
+          { id: 'b', label: zh('B') },
+        ],
+      },
+    } as unknown as Question;
+
+    const invalidPlaceholder = {
+      id: 'q_text',
+      type: 'text',
+      title: zh('文本'),
+      config: { placeholder: { en: 'Type here' } },
+    } as unknown as Question;
+
+    const result = validateSurveyContent(
+      surveyWith([groupWith([invalidOption, invalidPlaceholder])]),
+    );
+    const defaultLanguageIssues = result.issues.filter(
+      (item) => item.code === 'MISSING_DEFAULT_LANGUAGE_TEXT',
+    );
+
+    expect(defaultLanguageIssues).toHaveLength(2);
+    expect(defaultLanguageIssues[0]?.path).toBe(
+      'groups[0].questions[0].config.options[0].label["zh-CN"]',
+    );
+    expect(defaultLanguageIssues[1]?.path).toContain('config.placeholder');
+  });
+
   it('拒绝空问卷', () => {
     const result = validateSurveyContent(surveyWith([]));
 
@@ -121,11 +224,11 @@ describe('validateSurveyContent', () => {
     );
   });
 
-  it('要求问卷与题目都有标题', () => {
-    const content: SurveyContent = {
-      title: '   ',
-      groups: [{ id: 'g1', questions: [{ ...textQuestion(), title: '' }] }],
-    };
+  it('要求问卷与题目都提供标题', () => {
+    const content = {
+      defaultLanguage: 'zh-CN',
+      groups: [{ id: 'g1', questions: [{ id: 'q1', type: 'text', config: {} }] }],
+    } as unknown as SurveyContent;
 
     const result = validateSurveyContent(content);
 
@@ -136,7 +239,7 @@ describe('validateSurveyContent', () => {
     const invalid = {
       id: 'q_matrix',
       type: 'matrix',
-      title: '矩阵题',
+      title: zh('矩阵题'),
       config: { rows: [], columns: [] },
     } as unknown as Question;
 
@@ -149,8 +252,8 @@ describe('validateSurveyContent', () => {
     const invalid = {
       id: 'q_bad',
       type: 'single_choice',
-      title: '单选题',
-      config: { options: [{ id: 'a', label: 'A' }] },
+      title: zh('单选题'),
+      config: { options: [{ id: 'a', label: zh('A') }] },
     } as unknown as Question;
 
     const result = validateSurveyContent(surveyWith([groupWith([invalid])]));
@@ -162,11 +265,11 @@ describe('validateSurveyContent', () => {
     const invalid = {
       id: 'q_bad',
       type: 'single_choice',
-      title: '单选题',
+      title: zh('单选题'),
       config: {
         options: [
-          { id: 'a', label: 'A', value: 'same' },
-          { id: 'a', label: 'B', value: 'same' },
+          { id: 'a', label: zh('A'), value: 'same' },
+          { id: 'a', label: zh('B'), value: 'same' },
         ],
       },
     } as unknown as Question;
@@ -199,19 +302,19 @@ describe('validateSurveyContent', () => {
     const number = {
       id: 'q_number',
       type: 'number',
-      title: '数字',
+      title: zh('数字'),
       config: { min: 10, max: 5 },
     } as unknown as Question;
     const date = {
       id: 'q_date',
       type: 'date',
-      title: '日期',
+      title: zh('日期'),
       config: { min: '2026-12-01', max: '2026-01-01' },
     } as unknown as Question;
     const invalidDate = {
       id: 'q_date_bad',
       type: 'date',
-      title: '日期',
+      title: zh('日期'),
       config: { min: '2026-13-01' },
     } as unknown as Question;
 
@@ -229,13 +332,13 @@ describe('validateSurveyContent', () => {
     const invalid = {
       id: 'q_rating',
       type: 'rating',
-      title: '评分',
+      title: zh('评分'),
       config: {
         min: 5,
         max: 3,
         labels: [
-          { value: 2, label: '低' },
-          { value: 2, label: '重复' },
+          { value: 2, label: zh('低') },
+          { value: 2, label: zh('重复') },
         ],
       },
     } as unknown as Question;
@@ -245,6 +348,22 @@ describe('validateSurveyContent', () => {
     expect(
       codesOf(result.issues).filter((code) => code === 'INVALID_RATING_RANGE').length,
     ).toBeGreaterThanOrEqual(2);
+  });
+
+  it('评分标签同样要求默认语言文案', () => {
+    const invalid = {
+      id: 'q_rating',
+      type: 'rating',
+      title: zh('评分'),
+      config: {
+        max: 5,
+        labels: [{ value: 5, label: { en: 'Excellent' } }],
+      },
+    } as unknown as Question;
+
+    const result = validateSurveyContent(surveyWith([groupWith([invalid])]));
+
+    expect(codesOf(result.issues)).toContain('MISSING_DEFAULT_LANGUAGE_TEXT');
   });
 
   it('检测逻辑引用不存在的题目', () => {
@@ -376,7 +495,8 @@ describe('validateSurveyContent', () => {
   it('校验草稿时同时检查 surveyId', () => {
     const draft = createSurveyDraft({
       surveyId: '',
-      title: '草稿',
+      defaultLanguage: 'zh-CN',
+      title: zh('草稿'),
       groups: [groupWith([textQuestion()])],
     });
 
@@ -389,7 +509,8 @@ describe('validateSurveyContent', () => {
   it('合法草稿通过校验', () => {
     const draft = createSurveyDraft({
       surveyId: 'survey-1',
-      title: '草稿',
+      defaultLanguage: 'zh-CN',
+      title: zh('草稿', 'Draft'),
       groups: [groupWith([textQuestion()])],
     });
 
