@@ -9,6 +9,8 @@ import {
 import type {
   PublishQuestionnaireResponse,
   QuestionnaireDetailResponse,
+  QuestionnaireListResponse,
+  QuestionnaireSummaryResponse,
   UpdateQuestionnaireDraftRequest,
 } from '@starply/contracts';
 import {
@@ -23,7 +25,11 @@ import {
 } from '@starply/questionnaire-core';
 import { checkTenantSlug } from '@starply/tenancy-core';
 
-import { QuestionnaireRepository, type QuestionnaireDetail } from './questionnaire.repository';
+import {
+  QuestionnaireRepository,
+  type QuestionnaireDetail,
+  type QuestionnaireSummary,
+} from './questionnaire.repository';
 
 /**
  * 问卷应用服务：租户与权限由 TenantContextGuard 保证，这里只处理问卷领域规则。
@@ -91,6 +97,12 @@ export class QuestionnaireService {
     });
 
     return toDetailResponse(detail);
+  }
+
+  async list(tenantId: string): Promise<QuestionnaireListResponse> {
+    const summaries = await this.repository.listSummaries(tenantId);
+
+    return { items: summaries.map(toSummaryResponse) };
   }
 
   async get(tenantId: string, questionnaireId: string): Promise<QuestionnaireDetailResponse> {
@@ -207,6 +219,20 @@ function readDraftContent(body: unknown): SurveyContent {
   }
 
   return content as unknown as UpdateQuestionnaireDraftRequest['content'];
+}
+
+function toSummaryResponse(summary: QuestionnaireSummary): QuestionnaireSummaryResponse {
+  return {
+    id: summary.id,
+    slug: summary.slug,
+    status: summary.status,
+    title: summary.title,
+    defaultLanguage: summary.defaultLanguage,
+    createdAt: summary.createdAt.toISOString(),
+    updatedAt: summary.updatedAt.toISOString(),
+    publishedVersion: summary.publishedVersion,
+    publishedAt: summary.publishedAt ? summary.publishedAt.toISOString() : null,
+  };
 }
 
 function toDetailResponse(detail: QuestionnaireDetail): QuestionnaireDetailResponse {

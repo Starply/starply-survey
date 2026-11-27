@@ -1,5 +1,7 @@
 import type { QuestionnaireStatus } from '@starply/contracts';
 import type {
+  LanguageTag,
+  LocalizedText,
   PublishedSurveyVersion,
   ReadonlySurveyContent,
   SurveyContent,
@@ -29,6 +31,20 @@ export interface QuestionnaireDetail {
   updatedAt: Date;
   draft: QuestionnaireDraftState;
   published: PublishedVersionState | null;
+}
+
+/** 列表概览：只取展示所需字段，不加载草稿完整内容。 */
+export interface QuestionnaireSummary {
+  id: string;
+  slug: string;
+  status: QuestionnaireStatus;
+  title: LocalizedText;
+  defaultLanguage: LanguageTag;
+  createdAt: Date;
+  /** 草稿最后更新时间。 */
+  updatedAt: Date;
+  publishedVersion: number | null;
+  publishedAt: Date | null;
 }
 
 export interface CreateQuestionnaireInput {
@@ -65,6 +81,9 @@ export abstract class QuestionnaireRepository {
   abstract isSlugTaken(tenantId: string, slug: string): Promise<boolean>;
 
   abstract create(input: CreateQuestionnaireInput): Promise<QuestionnaireDetail>;
+
+  /** 租户级全量列表，按草稿更新时间倒序。 */
+  abstract listSummaries(tenantId: string): Promise<QuestionnaireSummary[]>;
 
   abstract findDetail(
     tenantId: string,

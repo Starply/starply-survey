@@ -10,6 +10,7 @@ import {
   type PublishQuestionnaireOutcome,
   type PublishedSnapshotBuilder,
   type QuestionnaireDetail,
+  type QuestionnaireSummary,
   type PublishedVersionState,
 } from './questionnaire.repository';
 
@@ -82,6 +83,57 @@ export class TypeormQuestionnaireRepository extends QuestionnaireRepository {
         published: null,
       };
     });
+  }
+
+  /**
+   * 列表按草稿更新时间排序：草稿保存在版本表，问卷主体的 updatedAt 不会随之变化，
+   * 因此排序放在内存中完成，避免额外的 SQL 联表。
+   */
+  async listSummaries(tenantId: string): Promise<QuestionnaireSummary[]> {
+    const questionnaires = await this.dataSource
+      .getRepository(Questionnaire)
+      .find({ where: { tenantId } });
+
+    const versionIds = questionnaires
+      .flatMap((item) => [item.draftVersionId, item.publishedVersionId])
+      .filter((id): id is string => typeof id === 'string');
+    if (versionIds.length === 0) {
+      return [];
+    }
+
+    const versions = await this.dataSource
+      .getRepository(QuestionnaireVersion)
+      .find({ where: { id: In(versionIds) } });
+    const versionById = new Map(versions.map((version) => [version.id, version]));
+
+    const summaries: QuestionnaireSummary[] = [];
+    for (const questionnaire of questionnaires) {
+      const draft = questionnaire.draftVersionId
+        ? versionById.get(questionnaire.draftVersionId)
+        : undefined;
+      if (!draft) {
+        continue;
+      }
+
+      const content = readContent(draft.content);
+      const published = questionnaire.publishedVersionId
+        ? versionById.get(questionnaire.publishedVersionId)
+        : undefined;
+
+      summaries.push({
+        id: questionnaire.id,
+        slug: questionnaire.slug,
+        status: questionnaire.status,
+        title: content.title,
+        defaultLanguage: content.defaultLanguage,
+        createdAt: questionnaire.createdAt,
+        updatedAt: draft.updatedAt,
+        publishedVersion: published?.version ?? null,
+        publishedAt: published?.publishedAt ?? null,
+      });
+    }
+
+    return summaries.sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime());
   }
 
   async findDetail(tenantId: string, questionnaireId: string): Promise<QuestionnaireDetail | null> {

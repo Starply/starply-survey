@@ -9,6 +9,7 @@ import {
   type PublishedSnapshotBuilder,
   type PublishedVersionState,
   type QuestionnaireDetail,
+  type QuestionnaireSummary,
 } from './questionnaire.repository';
 import { QuestionnaireService } from './questionnaire.service';
 
@@ -32,25 +33,50 @@ const validContent = (title = '客户满意度调查'): SurveyContent => ({
 class InMemoryQuestionnaireRepository extends QuestionnaireRepository {
   readonly details = new Map<string, QuestionnaireDetail>();
   readonly publishedHistory: PublishedVersionState[] = [];
+  /** 单调递增的时钟，保证列表排序断言不受同毫秒写入影响。 */
+  private clock = 0;
+
+  private stamp(): Date {
+    this.clock += 1;
+    return new Date(now.getTime() + this.clock * 1_000);
+  }
 
   async isSlugTaken(tenantId: string, slug: string): Promise<boolean> {
     return this.findBySlug(tenantId, slug) !== null;
   }
 
   async create(input: CreateQuestionnaireInput): Promise<QuestionnaireDetail> {
+    const createdAt = this.stamp();
     const detail: QuestionnaireDetail = {
       id: input.id,
       tenantId: input.tenantId,
       slug: input.slug,
       status: 'draft',
-      createdAt: now,
-      updatedAt: now,
-      draft: { id: `draft-${input.id}`, content: clone(input.content), updatedAt: now },
+      createdAt,
+      updatedAt: createdAt,
+      draft: { id: `draft-${input.id}`, content: clone(input.content), updatedAt: createdAt },
       published: null,
     };
     this.details.set(input.id, detail);
 
     return detail;
+  }
+
+  async listSummaries(tenantId: string): Promise<QuestionnaireSummary[]> {
+    return [...this.details.values()]
+      .filter((detail) => detail.tenantId === tenantId)
+      .map((detail) => ({
+        id: detail.id,
+        slug: detail.slug,
+        status: detail.status,
+        title: detail.draft.content.title,
+        defaultLanguage: detail.draft.content.defaultLanguage,
+        createdAt: detail.createdAt,
+        updatedAt: detail.draft.updatedAt,
+        publishedVersion: detail.published?.version ?? null,
+        publishedAt: detail.published?.publishedAt ?? null,
+      }))
+      .sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime());
   }
 
   async findDetail(tenantId: string, questionnaireId: string): Promise<QuestionnaireDetail | null> {
@@ -68,13 +94,14 @@ class InMemoryQuestionnaireRepository extends QuestionnaireRepository {
       return null;
     }
 
+    const updatedAt = this.stamp();
     const updated: QuestionnaireDetail = {
       ...detail,
-      updatedAt: new Date(now.getTime() + 1_000),
+      updatedAt,
       draft: {
         ...detail.draft,
         content: clone(content),
-        updatedAt: new Date(now.getTime() + 1_000),
+        updatedAt,
       },
     };
     this.details.set(questionnaireId, updated);
@@ -106,7 +133,7 @@ class InMemoryQuestionnaireRepository extends QuestionnaireRepository {
       ...detail,
       status: 'published',
       published,
-      updatedAt: new Date(now.getTime() + 2_000),
+      updatedAt: this.stamp(),
     });
 
     return { ok: true, version: published };
@@ -221,6 +248,58 @@ describe('QuestionnaireService.create', () => {
     );
 
     expect(error.getResponse()).toMatchObject({ code: 'invalid_request' });
+  });
+});
+
+describe('QuestionnaireService.list', () => {
+  it('空租户返回空列表', async () => {
+    const { service } = createService();
+
+    await expect(service.list('tenant-1')).resolves.toEqual({ items: [] });
+  });
+
+  it('只返回当前租户的问卷，并按草稿更新时间倒序', async () => {
+    const { service } = createService();
+    const first = await service.create('tenant-1', 'user-1', {
+      slug: 'survey-one',
+      defaultLanguage: 'zh-CN',
+      title: { 'zh-CN': '第一份' },
+    });
+    const second = await service.create('tenant-1', 'user-1', {
+      slug: 'survey-two',
+      defaultLanguage: 'zh-CN',
+      title: { 'zh-CN': '第二份' },
+    });
+    await service.create('tenant-2', 'user-1', {
+      slug: 'survey-one',
+      defaultLanguage: 'zh-CN',
+      title: { 'zh-CN': '其他租户' },
+    });
+
+    const list = await service.list('tenant-1');
+
+    expect(list.items.map((item) => item.id)).toEqual([second.id, first.id]);
+    expect(list.items[0]).toMatchObject({
+      slug: 'survey-two',
+      status: 'draft',
+      title: { 'zh-CN': '第二份' },
+      defaultLanguage: 'zh-CN',
+      publishedVersion: null,
+      publishedAt: null,
+    });
+  });
+
+  it('发布后返回最新版本号与发布时间', async () => {
+    const { service } = createService();
+    const created = await service.create('tenant-1', 'user-1', createRequest());
+    await service.updateDraft('tenant-1', created.id, { content: validContent() });
+    await service.publish('tenant-1', created.id);
+
+    const list = await service.list('tenant-1');
+
+    expect(list.items).toHaveLength(1);
+    expect(list.items[0]).toMatchObject({ status: 'published', publishedVersion: 1 });
+    expect(typeof list.items[0]?.publishedAt).toBe('string');
   });
 });
 

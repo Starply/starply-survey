@@ -1,5 +1,9 @@
 import { Body, Controller, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
-import type { PublishQuestionnaireResponse, QuestionnaireDetailResponse } from '@starply/contracts';
+import type {
+  PublishQuestionnaireResponse,
+  QuestionnaireDetailResponse,
+  QuestionnaireListResponse,
+} from '@starply/contracts';
 
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { RequireTenantPermission } from '../tenancy/tenant-permission.decorator';
@@ -23,6 +27,13 @@ export class QuestionnaireController {
     @Req() request: TenantRequest,
   ): Promise<QuestionnaireDetailResponse> {
     return this.questionnaires.create(request.tenant!.id, request.auth!.sub, body);
+  }
+
+  /** 租户级全量列表；仅返回概览字段，标题取当前草稿。 */
+  @Get()
+  @RequireTenantPermission('survey:read')
+  list(@Req() request: TenantRequest): Promise<QuestionnaireListResponse> {
+    return this.questionnaires.list(request.tenant!.id);
   }
 
   @Get(':questionnaireId')
