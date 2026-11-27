@@ -331,6 +331,12 @@ importers:
       '@starply/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@starply/questionnaire-core':
+        specifier: workspace:*
+        version: link:../../packages/questionnaire-core
+      '@starply/tenancy-core':
+        specifier: workspace:*
+        version: link:../../packages/tenancy-core
       ioredis:
         specifier: 'catalog:'
         version: 6.1.0(supports-color@8.1.1)
