@@ -1,0 +1,87 @@
+<section class="page-head">
+  <div>
+    <h1>问卷</h1>
+    <p class="hint">当前租户下的全部问卷，草稿可随时修改，发布后生成不可变版本。</p>
+  </div>
+  <t-button variant="outline" [loading]="loading()" (click)="load()">刷新</t-button>
+</section>
+
+<section class="panel create-panel">
+  <h2>新建问卷</h2>
+  <div class="form-grid">
+    <label class="field">
+      <span class="field-label">问卷标识</span>
+      <t-input
+        [value]="newSlug()"
+        (valueChange)="onSlugChange($event)"
+        placeholder="例如 nps-2026"
+      />
+    </label>
+    <label class="field">
+      <span class="field-label">默认语言</span>
+      <t-input
+        [value]="newLanguage()"
+        (valueChange)="onLanguageChange($event)"
+        placeholder="zh-CN"
+      />
+    </label>
+    <label class="field field-wide">
+      <span class="field-label">标题</span>
+      <t-input
+        [value]="newTitle()"
+        (valueChange)="onTitleChange($event)"
+        placeholder="例如 2026 年客户满意度调查"
+      />
+    </label>
+    <label class="field field-wide">
+      <span class="field-label">描述（可选）</span>
+      <t-input
+        [value]="newDescription()"
+        (valueChange)="onDescriptionChange($event)"
+        placeholder="一句话说明问卷目的"
+      />
+    </label>
+  </div>
+
+  @if (formError(); as message) {
+  <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <t-button theme="primary" [loading]="creating()" [disabled]="creating()" (click)="create()">
+    创建并编辑
+  </t-button>
+</section>
+
+<section class="panel list-panel">
+  <h2>全部问卷</h2>
+
+  @if (loading()) {
+  <p class="placeholder">正在加载问卷列表…</p>
+  } @else if (loadError(); as message) {
+  <p class="error" role="alert">{{ message }}</p>
+  } @else if (items().length === 0) {
+  <p class="placeholder">还没有问卷，先在上方创建一份。</p>
+  } @else {
+  <ul class="questionnaire-list">
+    @for (item of items(); track item.id) {
+    <li>
+      <a class="questionnaire-item" [routerLink]="['/t', tenantSlug, 'questionnaires', item.id]">
+        <div class="item-main">
+          <span class="item-title">{{ titleOf(item) }}</span>
+          <span class="item-slug">{{ item.slug }}</span>
+        </div>
+        <div class="item-meta">
+          <t-tag [theme]="item.status === 'published' ? 'success' : 'default'" variant="light">
+            {{ item.status === 'published' ? '已发布' : '草稿' }}
+          </t-tag>
+          @if (item.publishedVersion !== null) {
+          <span class="item-version">v{{ item.publishedVersion }}</span>
+          }
+          <span class="item-time">更新于 {{ updatedAtOf(item) }}</span>
+        </div>
+      </a>
+    </li>
+    }
+  </ul>
+  }
+</section>

@@ -1,0 +1,58 @@
+<div class="login-shell">
+  <section class="login-card">
+    <header class="login-header">
+      <h1>Starply Survey</h1>
+      <p>登录租户管理端，创建并发布问卷。</p>
+    </header>
+
+    <div class="field">
+      <label class="field-label" for="tenant">租户标识</label>
+      <t-input
+        id="tenant"
+        [value]="tenantSlug()"
+        (valueChange)="onTenantSlugChange($event)"
+        placeholder="例如 acme"
+        autocomplete="organization"
+      />
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="email">邮箱</label>
+      <t-input
+        id="email"
+        type="text"
+        [value]="email()"
+        (valueChange)="onEmailChange($event)"
+        placeholder="you@example.com"
+        autocomplete="username"
+      />
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="password">密码</label>
+      <t-input
+        id="password"
+        type="password"
+        [value]="password()"
+        (valueChange)="onPasswordChange($event)"
+        (enter)="submit()"
+        placeholder="请输入密码"
+        autocomplete="current-password"
+      />
+    </div>
+
+    @if (error(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+    }
+
+    <t-button
+      theme="primary"
+      block
+      [loading]="submitting()"
+      [disabled]="submitting()"
+      (click)="submit()"
+    >
+      登录
+    </t-button>
+  </section>
+</div>

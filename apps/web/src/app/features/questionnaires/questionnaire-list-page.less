@@ -1,0 +1,145 @@
+:host {
+  display: block;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.page-head h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--td-text-color-secondary, #666);
+  font-size: 14px;
+}
+
+.panel {
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  background: var(--td-bg-color-container, #fff);
+  box-shadow: var(--td-shadow-1, 0 1px 10px rgba(0, 0, 0, 0.05));
+}
+
+.panel h2 {
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.field {
+  display: block;
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--td-text-color-secondary, #666);
+}
+
+.error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--td-error-color-1, #fff0ed);
+  color: var(--td-error-color, #d54941);
+  font-size: 14px;
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--td-text-color-secondary, #666);
+  font-size: 14px;
+}
+
+.questionnaire-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.questionnaire-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--td-component-stroke, #e7e7e7);
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.questionnaire-item:hover {
+  border-color: var(--td-brand-color, #0052d9);
+  background: var(--td-brand-color-1, #f2f3ff);
+}
+
+.item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.item-title {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-slug {
+  font-size: 12px;
+  color: var(--td-text-color-secondary, #666);
+}
+
+.item-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--td-text-color-secondary, #666);
+}
+
+.item-version {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .questionnaire-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

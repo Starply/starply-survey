@@ -1,0 +1,197 @@
+<section class="editor-head">
+  <div class="head-main">
+    <a class="back" [routerLink]="['/t', tenantSlug, 'questionnaires']">← 返回问卷列表</a>
+    <div class="title-row">
+      <h1>{{ surveyTitle() || '未命名问卷' }}</h1>
+      <t-tag [theme]="status() === 'published' ? 'success' : 'default'" variant="light">
+        {{ status() === 'published' ? '已发布' : '草稿' }}
+      </t-tag>
+      @if (dirty()) {
+      <span class="dirty">有未保存修改</span>
+      }
+    </div>
+    <p class="hint">
+      默认语言 {{ defaultLanguage() }} @if (published()) { · 最近发布 {{ publishedAtText() }} }
+    </p>
+  </div>
+
+  <div class="head-actions">
+    <t-button
+      variant="outline"
+      [loading]="saving()"
+      [disabled]="saving() || readOnly()"
+      (click)="saveDraft()"
+    >
+      保存草稿
+    </t-button>
+    <t-button
+      theme="primary"
+      [loading]="publishing()"
+      [disabled]="publishing() || readOnly()"
+      (click)="publish()"
+    >
+      发布
+    </t-button>
+  </div>
+</section>
+
+@if (readOnly()) {
+<p class="banner" role="status">当前账号在该租户内为只读权限，无法保存或发布。</p>
+} @if (loading()) {
+<p class="placeholder">正在加载问卷…</p>
+} @else if (loadError(); as message) {
+<section class="panel">
+  <p class="error" role="alert">{{ message }}</p>
+  <t-button variant="outline" (click)="load()">重试</t-button>
+</section>
+} @else if (content(); as survey) {
+<section class="panel">
+  <h2>基本信息</h2>
+  <label class="field">
+    <span class="field-label">标题（{{ survey.defaultLanguage }}）</span>
+    <t-input
+      [value]="surveyTitle()"
+      (valueChange)="setSurveyTitle($event)"
+      [disabled]="readOnly()"
+      placeholder="问卷标题"
+    />
+  </label>
+  <label class="field">
+    <span class="field-label">描述</span>
+    <t-textarea
+      [value]="surveyDescription()"
+      (valueChange)="setSurveyDescription($event)"
+      [autosize]="{ minRows: 2, maxRows: 4 }"
+      [disabled]="readOnly()"
+      placeholder="向填写者说明问卷目的"
+    />
+  </label>
+</section>
+
+<section class="groups-head">
+  <h2>分组与题目</h2>
+  <t-button variant="outline" [disabled]="readOnly()" (click)="onAddGroup()">添加分组</t-button>
+</section>
+
+@if (survey.groups.length === 0) {
+<p class="panel placeholder">还没有分组。发布前至少需要一个分组和一道题目。</p>
+} @for (group of survey.groups; track group.id; let groupIndex = $index) {
+<section class="panel group">
+  <header class="group-head">
+    <span class="group-index">分组 {{ groupIndex + 1 }}</span>
+    <t-button
+      variant="text"
+      theme="danger"
+      size="small"
+      [disabled]="readOnly()"
+      (click)="onRemoveGroup(group.id)"
+    >
+      删除分组
+    </t-button>
+  </header>
+
+  <t-input
+    [value]="groupTitle(group)"
+    (valueChange)="onGroupTitleChange(group.id, $event)"
+    [disabled]="readOnly()"
+    placeholder="分组标题"
+  />
+
+  @if (group.questions.length === 0) {
+  <p class="placeholder">本组还没有题目。</p>
+  } @for (question of group.questions; track question.id; let questionIndex = $index) {
+  <article class="question">
+    <header class="question-head">
+      <span class="question-index">第 {{ questionIndex + 1 }} 题</span>
+      <t-tag variant="light">{{ typeLabel(question) }}</t-tag>
+      <label class="required">
+        <input
+          type="checkbox"
+          [checked]="question.required === true"
+          [disabled]="readOnly()"
+          (change)="onQuestionRequiredChange(group.id, question.id, $event)"
+        />
+        必答
+      </label>
+      <t-button
+        variant="text"
+        theme="danger"
+        size="small"
+        [disabled]="readOnly()"
+        (click)="onRemoveQuestion(group.id, question.id)"
+      >
+        删除
+      </t-button>
+    </header>
+
+    <t-input
+      [value]="questionTitle(question)"
+      (valueChange)="onQuestionTitleChange(group.id, question.id, $event)"
+      [disabled]="readOnly()"
+      placeholder="题目标题"
+    />
+
+    @if (optionsOf(question).length > 0) {
+    <ul class="options">
+      @for (option of optionsOf(question); track option.id; let optionIndex = $index) {
+      <li class="option">
+        <span class="option-index">{{ optionIndex + 1 }}</span>
+        <t-input
+          [value]="optionLabel(option)"
+          (valueChange)="onOptionLabelChange(group.id, question.id, option.id, $event)"
+          [disabled]="readOnly()"
+          placeholder="选项文案"
+        />
+        <t-button
+          variant="text"
+          theme="danger"
+          size="small"
+          [disabled]="readOnly()"
+          (click)="onRemoveOption(group.id, question.id, option.id)"
+        >
+          移除
+        </t-button>
+      </li>
+      }
+    </ul>
+    <t-button
+      variant="text"
+      size="small"
+      [disabled]="readOnly()"
+      (click)="onAddOption(group.id, question.id)"
+    >
+      添加选项
+    </t-button>
+    } @if (question.type === 'rating') {
+    <p class="placeholder">评分范围 1-{{ ratingMax(question) }}</p>
+    }
+  </article>
+  }
+
+  <div class="add-question">
+    <select
+      class="type-select"
+      [value]="pendingTypeOf(group.id)"
+      [disabled]="readOnly()"
+      (change)="onPendingTypeChange(group.id, $event)"
+    >
+      @for (option of questionTypeOptions; track option.value) {
+      <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+    <t-button [disabled]="readOnly()" (click)="onAddQuestion(group.id)">添加题目</t-button>
+  </div>
+</section>
+} @if (issues().length > 0) {
+<section class="panel issues">
+  <h2>校验提示</h2>
+  <ul>
+    @for (issue of issues(); track $index) {
+    <li>
+      <span>{{ issue.message }}</span>
+      <code class="issue-path">{{ issue.path }}</code>
+    </li>
+    }
+  </ul>
+</section>
+} }

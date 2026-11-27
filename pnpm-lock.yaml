@@ -398,6 +398,15 @@ importers:
       '@angular/router':
         specifier: 'catalog:'
         version: 22.3.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(@angular/platform-browser@22.3.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@starply/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@starply/questionnaire-core':
+        specifier: workspace:*
+        version: link:../../packages/questionnaire-core
+      '@starply/tenancy-core':
+        specifier: workspace:*
+        version: link:../../packages/tenancy-core
       '@tdesign-ng/components':
         specifier: 'catalog:'
         version: 0.1.0(b9968a68a006480fc04feac01284dbf5)

@@ -23,6 +23,9 @@
     "@tdesign-ng/components": "catalog:",
     "@tdesign-ng/icons": "catalog:",
     "@tdesign-ng/styles": "catalog:",
+    "@starply/contracts": "workspace:*",
+    "@starply/questionnaire-core": "workspace:*",
+    "@starply/tenancy-core": "workspace:*",
     "rxjs": "catalog:",
     "tslib": "catalog:"
   },
