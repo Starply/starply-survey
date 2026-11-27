@@ -16,6 +16,7 @@ const CONFIG_KEYS = [
   'REDIS_HOST',
   'REDIS_PORT',
   'REDIS_PASSWORD',
+  'AUTH_ACCESS_TOKEN_SECRET',
 ];
 
 describe('configuration', () => {
@@ -49,6 +50,7 @@ describe('configuration', () => {
     expect(config.database.port).toBe(3306);
     expect(config.database.poolSize).toBe(10);
     expect(config.redis.port).toBe(6379);
+    expect(config.auth.accessTokenSecret).toBe('');
   });
 
   it('reads overrides from env', () => {
@@ -58,6 +60,7 @@ describe('configuration', () => {
     process.env['DEFAULT_TIME_ZONE'] = 'UTC';
     process.env['MYSQL_HOST'] = 'db.local';
     process.env['REDIS_PORT'] = '6380';
+    process.env['AUTH_ACCESS_TOKEN_SECRET'] = 'secret-from-env';
 
     const config = configuration();
 
@@ -67,5 +70,6 @@ describe('configuration', () => {
     expect(config.defaultTimeZone).toBe('UTC');
     expect(config.database.host).toBe('db.local');
     expect(config.redis.port).toBe(6380);
+    expect(config.auth.accessTokenSecret).toBe('secret-from-env');
   });
 });

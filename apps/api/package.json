@@ -16,11 +16,14 @@
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "dependencies": {
+    "@node-rs/argon2": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "catalog:",
+    "@starply/auth-core": "workspace:*",
     "@starply/contracts": "workspace:*",
+    "ioredis": "catalog:",
     "mysql2": "catalog:",
     "reflect-metadata": "catalog:",
     "rxjs": "catalog:",

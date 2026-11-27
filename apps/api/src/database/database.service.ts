@@ -1,6 +1,12 @@
 import 'reflect-metadata';
 
-import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 
@@ -61,10 +67,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** 供后续业务模块取用；未连接时抛错，避免悄悄拿到不可用连接。 */
+  /** 供业务模块取用；未连接时抛 503，避免悄悄拿到不可用连接。 */
   getDataSource(): DataSource {
     if (!this.dataSource?.isInitialized) {
-      throw new Error('Database is not connected');
+      throw new ServiceUnavailableException({
+        code: 'database_unavailable',
+        message: '数据库暂不可用，请稍后重试',
+      });
     }
     return this.dataSource;
   }

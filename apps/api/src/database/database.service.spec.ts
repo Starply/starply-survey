@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 
+import { ServiceUnavailableException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -58,10 +59,20 @@ describe('DatabaseService', () => {
     });
   });
 
-  it('未连接时 getDataSource 抛错', () => {
+  it('未连接时 getDataSource 抛 503', () => {
     const service = new DatabaseService(config);
+    let error: unknown;
 
-    expect(() => service.getDataSource()).toThrow('Database is not connected');
+    try {
+      service.getDataSource();
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toBeInstanceOf(ServiceUnavailableException);
+    const exception = error as ServiceUnavailableException;
+    expect(exception.getStatus()).toBe(503);
+    expect(exception.getResponse()).toMatchObject({ code: 'database_unavailable' });
   });
 
   it('销毁时释放连接池', async () => {

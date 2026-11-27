@@ -42,7 +42,7 @@ describe('HealthController', () => {
 
     expect(response.status).not.toHaveBeenCalled();
     expect(result.status).toBe('ok');
-    expect(result.checks?.database).toEqual({ status: 'up', latencyMs: 3 });
+    expect(result.checks?.['database']).toEqual({ status: 'up', latencyMs: 3 });
   });
 
   it('数据库异常时 readiness 返回 503 而不是 500', async () => {
@@ -56,7 +56,7 @@ describe('HealthController', () => {
 
     expect(response.status).toHaveBeenCalledWith(HttpStatus.SERVICE_UNAVAILABLE);
     expect(result.status).toBe('error');
-    expect(result.checks?.database.status).toBe('down');
-    expect(result.checks?.database.code).toBe('ECONNREFUSED');
+    expect(result.checks?.['database'].status).toBe('down');
+    expect(result.checks?.['database'].code).toBe('ECONNREFUSED');
   });
 });
