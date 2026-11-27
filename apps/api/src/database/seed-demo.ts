@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { hash } from '@node-rs/argon2';
 import type { TenantRole } from '@starply/contracts';
+import { checkTenantSlug } from '@starply/tenancy-core';
 
 import { createAppDataSource } from './data-source';
 import { Membership, Tenant, User } from './entities';
@@ -10,32 +11,68 @@ import { Membership, Tenant, User } from './entities';
  * 开发环境演示数据。
  * 目前没有注册/建租户接口，本地联调用它写入一个 owner 账号；
  * 幂等执行：按 slug/email 查找，存在则更新角色、状态与密码哈希。
- * 运行方式：pnpm db:seed:demo（读取 .env 中的数据库配置）。
+ * 账号信息全部来自环境变量，脚本内不保存任何凭据。
+ * 运行方式：pnpm db:seed:demo（读取 .env）。
  */
-const DEMO_TENANT = { slug: 'acme', name: 'Acme 演示租户' };
-const DEMO_USER = {
-  email: 'demo@starply.dev',
-  password: 'Starply@2026',
-  displayName: '演示管理员',
-};
-const DEMO_ROLE: TenantRole = 'owner';
+export interface DemoSeedConfig {
+  tenantSlug: string;
+  tenantName: string;
+  email: string;
+  password: string;
+  displayName: string;
+}
 
-export async function seedDemoData(): Promise<{ tenantId: string; userId: string }> {
+export function readDemoSeedConfig(env: NodeJS.ProcessEnv = process.env): DemoSeedConfig {
+  const rawSlug = env['DEMO_TENANT_SLUG']?.trim() ?? '';
+  const email = env['DEMO_EMAIL']?.trim() ?? '';
+  const password = env['DEMO_PASSWORD'] ?? '';
+
+  const missing: string[] = [];
+  if (rawSlug.length === 0) {
+    missing.push('DEMO_TENANT_SLUG');
+  }
+  if (email.length === 0) {
+    missing.push('DEMO_EMAIL');
+  }
+  if (password.length === 0) {
+    missing.push('DEMO_PASSWORD');
+  }
+  if (missing.length > 0) {
+    throw new Error(`缺少演示账号环境变量：${missing.join(', ')}（参考 apps/api/.env.example）`);
+  }
+
+  const slug = checkTenantSlug(rawSlug);
+  if (!slug.ok) {
+    throw new Error(`DEMO_TENANT_SLUG 不合法（${slug.issue}），需为 3-63 位小写字母、数字或连字符`);
+  }
+
+  return {
+    tenantSlug: slug.slug,
+    tenantName: env['DEMO_TENANT_NAME']?.trim() || `${slug.slug} 演示租户`,
+    email,
+    password,
+    displayName: env['DEMO_DISPLAY_NAME']?.trim() || '演示管理员',
+  };
+}
+
+export async function seedDemoData(
+  config: DemoSeedConfig = readDemoSeedConfig(),
+): Promise<{ tenantId: string; userId: string }> {
   const dataSource = createAppDataSource();
   await dataSource.initialize();
 
   try {
     const tenants = dataSource.getRepository(Tenant);
-    let tenant = await tenants.findOne({ where: { slug: DEMO_TENANT.slug } });
+    let tenant = await tenants.findOne({ where: { slug: config.tenantSlug } });
     if (tenant) {
-      tenant.name = DEMO_TENANT.name;
+      tenant.name = config.tenantName;
       tenant.status = 'active';
       tenant = await tenants.save(tenant);
     } else {
       tenant = await tenants.save(
         tenants.create({
-          slug: DEMO_TENANT.slug,
-          name: DEMO_TENANT.name,
+          slug: config.tenantSlug,
+          name: config.tenantName,
           status: 'active',
           defaultLanguage: 'zh-CN',
           defaultTimeZone: 'Asia/Shanghai',
@@ -44,30 +81,31 @@ export async function seedDemoData(): Promise<{ tenantId: string; userId: string
     }
 
     const users = dataSource.getRepository(User);
-    const passwordHash = await hash(DEMO_USER.password);
-    let user = await users.findOne({ where: { email: DEMO_USER.email } });
+    const passwordHash = await hash(config.password);
+    let user = await users.findOne({ where: { email: config.email } });
     if (user) {
       user.passwordHash = passwordHash;
-      user.displayName = DEMO_USER.displayName;
+      user.displayName = config.displayName;
       user.status = 'active';
       user = await users.save(user);
     } else {
       user = await users.save(
         users.create({
-          email: DEMO_USER.email,
+          email: config.email,
           passwordHash,
-          displayName: DEMO_USER.displayName,
+          displayName: config.displayName,
           status: 'active',
         }),
       );
     }
 
     const memberships = dataSource.getRepository(Membership);
+    const role: TenantRole = 'owner';
     let membership = await memberships.findOne({
       where: { tenantId: tenant.id, userId: user.id },
     });
     if (membership) {
-      membership.role = DEMO_ROLE;
+      membership.role = role;
       membership.status = 'active';
       membership = await memberships.save(membership);
     } else {
@@ -75,7 +113,7 @@ export async function seedDemoData(): Promise<{ tenantId: string; userId: string
         memberships.create({
           tenantId: tenant.id,
           userId: user.id,
-          role: DEMO_ROLE,
+          role,
           status: 'active',
         }),
       );
@@ -89,9 +127,10 @@ export async function seedDemoData(): Promise<{ tenantId: string; userId: string
 
 seedDemoData()
   .then(({ tenantId, userId }) => {
+    const config = readDemoSeedConfig();
     console.log('演示数据已就绪：');
-    console.log(`  租户 slug: ${DEMO_TENANT.slug}（${tenantId}）`);
-    console.log(`  登录邮箱: ${DEMO_USER.email} / 密码: ${DEMO_USER.password}（${userId}）`);
+    console.log(`  租户 slug: ${config.tenantSlug}（${tenantId}）`);
+    console.log(`  登录邮箱: ${config.email}（${userId}），密码取自 DEMO_PASSWORD`);
   })
   .catch((error: unknown) => {
     console.error('演示数据写入失败', error);
