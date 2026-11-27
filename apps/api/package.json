@@ -12,6 +12,7 @@
     "test": "vitest run",
     "db:migrate": "pnpm build && node --env-file=.env ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
     "db:revert": "pnpm build && node --env-file=.env ./node_modules/typeorm/cli.js migration:revert -d dist/database/data-source.js",
+    "db:seed:demo": "pnpm build && node --env-file=.env dist/database/seed-demo.js",
     "db:migration:generate": "pnpm build && node --env-file=.env ./node_modules/typeorm/cli.js migration:generate -d dist/database/data-source.js",
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\""
   },
