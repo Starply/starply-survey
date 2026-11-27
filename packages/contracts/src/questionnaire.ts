@@ -97,6 +97,29 @@ export interface QuestionnaireDetailResponse {
   published: PublishedVersionView | null;
 }
 
+/**
+ * 列表项：标题与默认语言取自当前草稿，最后一次发布时间取自最新发布版本。
+ * 不返回草稿完整内容，避免列表页加载整份 schema。
+ */
+export interface QuestionnaireSummaryResponse {
+  id: string;
+  slug: string;
+  status: QuestionnaireStatus;
+  title: LocalizedText;
+  defaultLanguage: LanguageTag;
+  createdAt: string;
+  /** 草稿最后更新时间，作为列表排序依据。 */
+  updatedAt: string;
+  /** 从未发布时为 null。 */
+  publishedVersion: number | null;
+  publishedAt: string | null;
+}
+
+/** 租户级问卷列表；当前为全量返回，分页留待列表规模增长后再加。 */
+export interface QuestionnaireListResponse {
+  items: QuestionnaireSummaryResponse[];
+}
+
 export type PublishQuestionnaireResponse = PublishedVersionSummary;
 
 /** 问卷与租户上下文相关的错误码，前端据此决定提示与跳转。 */
