@@ -20,7 +20,9 @@
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "dependencies": {
+    "@starply/auth-core": "workspace:*",
     "@starply/questionnaire-core": "workspace:*",
+    "@starply/tenancy-core": "workspace:*",
     "tslib": "catalog:"
   },
   "devDependencies": {

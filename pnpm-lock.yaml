@@ -415,6 +415,22 @@ importers:
         specifier: 'catalog:'
         version: 5.1.1(@types/node@24.19.2)(jsdom@31.0.0)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.108.2)(sass@1.108.2))
 
+  packages/auth-core:
+    dependencies:
+      tslib:
+        specifier: 'catalog:'
+        version: 2.9.1
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.1(@types/node@24.19.2)(jsdom@31.0.0)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.108.2)(sass@1.108.2))
+
   packages/config:
     devDependencies:
       '@eslint/js':
@@ -438,9 +454,15 @@ importers:
 
   packages/contracts:
     dependencies:
+      '@starply/auth-core':
+        specifier: workspace:*
+        version: link:../auth-core
       '@starply/questionnaire-core':
         specifier: workspace:*
         version: link:../questionnaire-core
+      '@starply/tenancy-core':
+        specifier: workspace:*
+        version: link:../tenancy-core
       tslib:
         specifier: 'catalog:'
         version: 2.9.1
@@ -450,6 +472,19 @@ importers:
         version: 6.0.3
 
   packages/questionnaire-core:
+    dependencies:
+      tslib:
+        specifier: 'catalog:'
+        version: 2.9.1
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.1(@types/node@24.19.2)(jsdom@31.0.0)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.108.2)(sass@1.108.2))
+
+  packages/tenancy-core:
     dependencies:
       tslib:
         specifier: 'catalog:'

@@ -1,4 +1,6 @@
 export * from './questionnaire';
+export * from './tenancy';
+export * from './auth';
 
 /**
  * 健康检查响应契约。
