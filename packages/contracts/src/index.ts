@@ -1,4 +1,5 @@
 export * from './questionnaire';
+export * from './question-bank';
 export * from './tenancy';
 export * from './auth';
 
