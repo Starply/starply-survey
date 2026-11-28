@@ -38,6 +38,8 @@ catalog:
   '@tdesign-ng/components': 0.1.1
   '@tdesign-ng/icons': 0.1.1
   '@tdesign-ng/styles': 0.1.1
+  # 图表
+  echarts: 6.1.0
   # Tooling
   '@eslint/js': 10.0.1
   '@types/express': 5.0.6

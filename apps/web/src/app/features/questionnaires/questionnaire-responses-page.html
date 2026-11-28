@@ -7,7 +7,7 @@
         {{ status() === 'published' ? '已发布' : '草稿' }}
       </t-tag>
     </div>
-    <p class="hint">按提交时间倒序查看原始答卷；时间/IP 筛选与导出将在下一阶段补充。</p>
+    <p class="hint">按提交时间倒序查看原始答卷，可导出 CSV；时间/IP 筛选将在下一阶段补充。</p>
   </div>
 </section>
 
@@ -16,7 +16,12 @@
 <section class="panel">
   <div class="table-head">
     <h2>原始数据</h2>
-    <span class="count">共 {{ total() }} 条</span>
+    <div class="table-actions">
+      <span class="count">共 {{ total() }} 条</span>
+      <t-button variant="outline" size="small" [loading]="exporting()" (click)="exportCsv()">
+        导出 CSV
+      </t-button>
+    </div>
   </div>
 
   @if (loadError(); as message) {
@@ -60,6 +65,16 @@
   <p class="dialog-meta">
     提交时间 {{ formatTime(response.submittedAt) }} · 版本 v{{ response.version }}
   </p>
-  <pre class="answers-json">{{ answersJson() }}</pre>
-  }
+  @if (answerRows().length) {
+  <ul class="answer-list">
+    @for (row of answerRows(); track row.id) {
+    <li class="answer-item">
+      <span class="answer-question">{{ row.title }}</span>
+      <span class="answer-value">{{ row.value }}</span>
+    </li>
+    }
+  </ul>
+  } @else {
+  <p class="answer-empty">该答卷没有有效作答。</p>
+  } }
 </t-dialog>

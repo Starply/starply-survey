@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -70,6 +71,18 @@ export class QuestionnaireController {
     @Req() request: TenantRequest,
   ): Promise<SurveyResponseListResponse> {
     return this.questionnaires.listResponses(request.tenant!.id, questionnaireId, page, pageSize);
+  }
+
+  /** 导出全部答卷为 CSV 附件；题目列取自已发布快照。 */
+  @Get(':questionnaireId/responses/export')
+  @RequireTenantPermission('survey:read')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="responses.csv"')
+  exportResponses(
+    @Param('questionnaireId') questionnaireId: string,
+    @Req() request: TenantRequest,
+  ): Promise<string> {
+    return this.questionnaires.exportResponsesCsv(request.tenant!.id, questionnaireId);
   }
 
   @Get(':questionnaireId')

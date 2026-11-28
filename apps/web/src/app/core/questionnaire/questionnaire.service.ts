@@ -52,6 +52,13 @@ export class QuestionnaireService {
     );
   }
 
+  /** 下载全部答卷的 CSV 文本；鉴权头由拦截器补齐。 */
+  exportResponsesCsv(tenantSlug: string, questionnaireId: string): Promise<string> {
+    return this.api.getText(
+      `${this.base(tenantSlug)}/${encodeURIComponent(questionnaireId)}/responses/export`,
+    );
+  }
+
   create(
     tenantSlug: string,
     request: CreateQuestionnaireRequest,

@@ -20,6 +20,13 @@ export class ApiClient {
     return firstValueFrom(this.http.get<T>(this.resolve(path), { params: query }));
   }
 
+  /** 读取纯文本响应，用于 CSV 等非 JSON 下载。 */
+  getText(path: string, query?: ApiQuery): Promise<string> {
+    return firstValueFrom(
+      this.http.get(this.resolve(path), { params: query, responseType: 'text' }),
+    );
+  }
+
   post<T>(path: string, body: unknown): Promise<T> {
     return firstValueFrom(this.http.post<T>(this.resolve(path), body));
   }

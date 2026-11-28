@@ -7,7 +7,7 @@
         {{ status() === 'published' ? '已发布' : '草稿' }}
       </t-tag>
     </div>
-    <p class="hint">查看问卷的收集情况；图表统计将使用 ECharts 按题型逐步补充。</p>
+    <p class="hint">查看问卷的收集情况与各题作答分布。</p>
   </div>
 </section>
 
@@ -43,12 +43,31 @@
 
 <section class="panel">
   <h2>题目统计</h2>
-  @if (responseCount() === 0) {
-  <p class="placeholder">还没有答卷数据。发布问卷并收集到回答后，这里会展示各题型的统计图表。</p>
-  } @else {
+  @if (questionStats().length === 0) {
   <p class="placeholder">
-    已收集 {{ responseCount() }} 份答卷，按题型图表将随 ECharts 接入后展示。
+    {{ responseCount() === 0 ?
+    '还没有答卷数据。发布问卷并收集到回答后，这里会展示各题型的统计图表。' :
+    '当前没有可统计的已发布题目。' }}
   </p>
+  } @else {
+  <div class="question-list">
+    @for (item of questionStats(); track item.questionId) {
+    <article class="question-card">
+      <header class="question-head">
+        <h3>{{ titleOf(item) }}</h3>
+        <div class="question-meta">
+          <t-tag variant="light">{{ typeLabel(item) }}</t-tag>
+          <span>{{ item.answeredCount }} 份作答</span>
+        </div>
+      </header>
+      @if (item.option; as option) {
+      <app-echart [option]="option" />
+      } @else {
+      <p class="placeholder">该题型暂不提供图表，仅统计作答数。</p>
+      }
+    </article>
+    }
+  </div>
   }
 </section>
 }

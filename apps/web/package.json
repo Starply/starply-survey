@@ -27,6 +27,7 @@
     "@starply/dev-fixtures": "workspace:*",
     "@starply/questionnaire-core": "workspace:*",
     "@starply/tenancy-core": "workspace:*",
+    "echarts": "catalog:",
     "rxjs": "catalog:",
     "tslib": "catalog:"
   },

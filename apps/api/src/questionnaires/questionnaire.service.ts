@@ -28,6 +28,8 @@ import {
 } from '@starply/questionnaire-core';
 import { checkTenantSlug } from '@starply/tenancy-core';
 
+import { buildQuestionStats } from './question-stats';
+import { buildResponsesCsv } from './response-csv';
 import {
   QuestionnaireRepository,
   type QuestionnaireDetail,
@@ -117,18 +119,24 @@ export class QuestionnaireService {
     return toDetailResponse(detail);
   }
 
-  /** 统计概览：先校验问卷归属，再读取答卷总数。 */
+  /** 统计概览与按题分布：先校验问卷归属，再读取答卷聚合。 */
   async stats(tenantId: string, questionnaireId: string): Promise<QuestionnaireStatsResponse> {
     const detail = await this.repository.findDetail(tenantId, questionnaireId);
     if (!detail) {
       throw questionnaireNotFound();
     }
 
+    const [responseCount, answers] = await Promise.all([
+      this.repository.countResponses(tenantId, questionnaireId),
+      this.repository.listAnswers(tenantId, questionnaireId),
+    ]);
+
     return {
       questionnaireId: detail.id,
-      responseCount: await this.repository.countResponses(tenantId, questionnaireId),
+      responseCount,
       publishedVersion: detail.published?.version ?? null,
       lastPublishedAt: detail.published?.publishedAt.toISOString() ?? null,
+      questions: buildQuestionStats(detail.published?.content ?? null, answers),
     };
   }
 
@@ -159,6 +167,17 @@ export class QuestionnaireService {
       page,
       pageSize,
     };
+  }
+
+  /** 导出全部答卷为 CSV；题目列取自已发布快照，未发布时仅导出基础字段。 */
+  async exportResponsesCsv(tenantId: string, questionnaireId: string): Promise<string> {
+    const detail = await this.repository.findDetail(tenantId, questionnaireId);
+    if (!detail) {
+      throw questionnaireNotFound();
+    }
+
+    const responses = await this.repository.listAllResponses(tenantId, questionnaireId);
+    return buildResponsesCsv(detail.published?.content ?? null, responses);
   }
 
   async updateDraft(

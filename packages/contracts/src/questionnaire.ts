@@ -5,6 +5,7 @@
 import type {
   LanguageTag,
   LocalizedText,
+  QuestionType,
   ReadonlySurveyContent,
   SurveyAnswers,
   SurveyContent,
@@ -137,6 +138,27 @@ export interface QuestionnaireStatsResponse {
   responseCount: number;
   publishedVersion: number | null;
   lastPublishedAt: string | null;
+  /** 按题目聚合的统计；未发布时为空数组。 */
+  questions: readonly QuestionStatsResponse[];
+}
+
+/** 选项 / 评分的分布桶。 */
+export interface AnswerDistributionBucket {
+  /** 提交值；选择题取 option.value ?? option.id，评分题取分值字符串。 */
+  value: string;
+  label: LocalizedText;
+  count: number;
+}
+
+/** 单个题目的统计结果。 */
+export interface QuestionStatsResponse {
+  questionId: string;
+  title: LocalizedText;
+  type: QuestionType;
+  /** 有效作答份数；空字符串与空数组不计入。 */
+  answeredCount: number;
+  /** 选择题与评分题才有分布桶，其余题型为空数组。 */
+  buckets: readonly AnswerDistributionBucket[];
 }
 
 /** 管理端查看的单条答卷，answers 保持 survey_response 中的原始结构。 */

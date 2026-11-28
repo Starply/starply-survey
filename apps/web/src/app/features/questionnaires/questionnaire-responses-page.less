@@ -55,6 +55,12 @@
   font-size: 16px;
 }
 
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .count {
   color: var(--td-text-color-secondary, #666);
   font-size: 13px;
@@ -72,15 +78,44 @@
   font-size: 13px;
 }
 
-.answers-json {
+.answer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   max-height: 420px;
   margin: 0;
-  padding: 12px;
+  padding: 0;
   overflow: auto;
-  border-radius: 6px;
-  background: var(--td-bg-color-page, #f3f3f3);
-  font-size: 12px;
+  list-style: none;
+}
+
+.answer-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--td-component-stroke, #e7e7e7);
+}
+
+.answer-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.answer-question {
+  color: var(--td-text-color-secondary, #666);
+  font-size: 13px;
+}
+
+.answer-value {
+  font-size: 14px;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.answer-empty {
+  margin: 0;
+  color: var(--td-text-color-placeholder, #999);
+  font-size: 14px;
 }

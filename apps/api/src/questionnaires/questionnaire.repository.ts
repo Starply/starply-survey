@@ -132,4 +132,13 @@ export abstract class QuestionnaireRepository {
     offset: number,
     limit: number,
   ): Promise<SurveyResponsePage>;
+
+  /** 统计用：读取全部答卷的作答内容，按提交时间正序。 */
+  abstract listAnswers(tenantId: string, questionnaireId: string): Promise<SurveyAnswers[]>;
+
+  /** 导出用：读取全部答卷的完整条目，按提交时间正序。 */
+  abstract listAllResponses(
+    tenantId: string,
+    questionnaireId: string,
+  ): Promise<SurveyResponseState[]>;
 }

@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
-import type { SurveyContent } from '@starply/questionnaire-core';
+import type { SurveyAnswers, SurveyContent } from '@starply/questionnaire-core';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -177,6 +177,27 @@ class InMemoryQuestionnaireRepository extends QuestionnaireRepository {
 
     const all = this.responses.get(questionnaireId) ?? [];
     return { items: all.slice(offset, offset + limit), total: all.length };
+  }
+
+  async listAnswers(tenantId: string, questionnaireId: string): Promise<SurveyAnswers[]> {
+    const detail = await this.findDetail(tenantId, questionnaireId);
+    if (!detail) {
+      return [];
+    }
+
+    return (this.responses.get(questionnaireId) ?? []).map((response) => response.answers);
+  }
+
+  async listAllResponses(
+    tenantId: string,
+    questionnaireId: string,
+  ): Promise<SurveyResponseState[]> {
+    const detail = await this.findDetail(tenantId, questionnaireId);
+    if (!detail) {
+      return [];
+    }
+
+    return [...(this.responses.get(questionnaireId) ?? [])];
   }
 
   private findBySlug(tenantId: string, slug: string): QuestionnaireDetail | null {
@@ -373,6 +394,15 @@ describe('QuestionnaireService.stats / listResponses', () => {
       responseCount: 2,
       publishedVersion: 1,
     });
+    expect(stats.questions).toEqual([
+      {
+        questionId: 'q1',
+        title: { 'zh-CN': '姓名' },
+        type: 'text',
+        answeredCount: 2,
+        buckets: [],
+      },
+    ]);
     expect(typeof stats.lastPublishedAt).toBe('string');
   });
 
@@ -410,6 +440,35 @@ describe('QuestionnaireService.stats / listResponses', () => {
 
     const error = await capture<NotFoundException>(() =>
       service.listResponses('tenant-1', 'missing'),
+    );
+
+    expect(error.getResponse()).toMatchObject({ code: 'questionnaire_not_found' });
+  });
+
+  it('导出 CSV 包含题目标题并转义特殊字符', async () => {
+    const { service, repository } = createService();
+    const created = await service.create('tenant-1', 'user-1', createRequest());
+    await service.updateDraft('tenant-1', created.id, { content: validContent() });
+    await service.publish('tenant-1', created.id);
+    repository.responses.set(created.id, [
+      { id: 'r1', version: 1, language: 'zh-CN', submittedAt: now, answers: { q1: '张三' } },
+      { id: 'r2', version: 1, language: 'en', submittedAt: now, answers: { q1: 'Li, "Si"' } },
+    ]);
+
+    const csv = await service.exportResponsesCsv('tenant-1', created.id);
+
+    expect(csv.startsWith('\uFEFF')).toBe(true);
+    const lines = csv.slice(1).split('\r\n');
+    expect(lines[0]).toBe('序号,提交时间,版本,语言,姓名');
+    expect(lines[1]).toContain('张三');
+    expect(lines[2]).toContain('"Li, ""Si"""');
+  });
+
+  it('导出不存在的问卷返回 404', async () => {
+    const { service } = createService();
+
+    const error = await capture<NotFoundException>(() =>
+      service.exportResponsesCsv('tenant-1', 'missing'),
     );
 
     expect(error.getResponse()).toMatchObject({ code: 'questionnaire_not_found' });

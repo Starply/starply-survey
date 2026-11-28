@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { QUESTIONNAIRE_SCHEMA_VERSION, type SurveyContent } from '@starply/questionnaire-core';
+import {
+  QUESTIONNAIRE_SCHEMA_VERSION,
+  type SurveyAnswers,
+  type SurveyContent,
+} from '@starply/questionnaire-core';
 import { In, type DataSource, type EntityManager } from 'typeorm';
 
 import { DatabaseService } from '../database/database.service';
@@ -13,6 +17,7 @@ import {
   type QuestionnaireSummary,
   type PublishedVersionState,
   type SurveyResponsePage,
+  type SurveyResponseState,
 } from './questionnaire.repository';
 
 /**
@@ -294,6 +299,34 @@ export class TypeormQuestionnaireRepository extends QuestionnaireRepository {
       })),
       total,
     };
+  }
+
+  async listAnswers(tenantId: string, questionnaireId: string): Promise<SurveyAnswers[]> {
+    const rows = await this.dataSource.getRepository(SurveyResponse).find({
+      where: { tenantId, questionnaireId },
+      order: { createdAt: 'ASC' },
+      select: { answers: true },
+    });
+
+    return rows.map((row) => row.answers);
+  }
+
+  async listAllResponses(
+    tenantId: string,
+    questionnaireId: string,
+  ): Promise<SurveyResponseState[]> {
+    const rows = await this.dataSource.getRepository(SurveyResponse).find({
+      where: { tenantId, questionnaireId },
+      order: { createdAt: 'ASC' },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      version: row.version,
+      language: row.language,
+      submittedAt: row.createdAt,
+      answers: row.answers,
+    }));
   }
 
   /** 锁住问卷行，串行化同一问卷的发布；锁必须处于事务中。 */
