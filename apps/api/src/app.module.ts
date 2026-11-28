@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import configuration from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { HealthController } from './health/health.controller';
+import { PublicSurveyModule } from './public-survey/public-survey.module';
 import { QuestionnairesModule } from './questionnaires/questionnaires.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { QuestionnairesModule } from './questionnaires/questionnaires.module';
     DatabaseModule,
     AuthModule,
     QuestionnairesModule,
+    PublicSurveyModule,
   ],
   controllers: [HealthController],
 })
