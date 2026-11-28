@@ -5,22 +5,16 @@
       <t-tag theme="primary" variant="light">{{ tenantSlug }}</t-tag>
     </div>
 
-    <nav class="main-nav">
-      <a
-        class="nav-item"
-        [routerLink]="['/t', tenantSlug, 'questionnaires']"
-        routerLinkActive="nav-item-active"
-      >
-        问卷管理
-      </a>
-      <a
-        class="nav-item"
-        [routerLink]="['/t', tenantSlug, 'question-bank']"
-        routerLinkActive="nav-item-active"
-      >
-        题库
-      </a>
-    </nav>
+    <t-menu
+      class="main-nav"
+      mode="horizontal"
+      theme="light"
+      [value]="activeMenu()"
+      (valueChange)="onMenuChange($event)"
+    >
+      <t-menu-item value="questionnaires">问卷管理</t-menu-item>
+      <t-menu-item value="question-bank">题库</t-menu-item>
+    </t-menu>
 
     <div class="account">
       <span class="account-email">{{ email() || '已登录' }}</span>

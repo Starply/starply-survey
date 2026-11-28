@@ -39,32 +39,9 @@
 }
 
 .main-nav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  flex: 1;
+  min-width: 0;
   margin-right: auto;
-}
-
-.nav-item {
-  padding: 8px 14px;
-  border-radius: 8px;
-  color: var(--td-text-color-secondary, #666);
-  font-size: 14px;
-  text-decoration: none;
-  transition:
-    color 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.nav-item:hover {
-  color: var(--td-brand-color, #0052d9);
-  background: var(--td-brand-color-1, #f2f3ff);
-}
-
-.nav-item-active {
-  color: var(--td-brand-color, #0052d9);
-  background: var(--td-brand-color-1, #f2f3ff);
-  font-weight: 600;
 }
 
 .account {

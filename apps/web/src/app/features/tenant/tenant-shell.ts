@@ -1,12 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
-import {
-  ActivatedRoute,
-  Router,
-  RouterLink,
-  RouterLinkActive,
-  RouterOutlet,
-} from '@angular/router';
-import { TButton, TTag } from '@tdesign-ng/components';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { TButton, TMenu, TMenuItem, TTag } from '@tdesign-ng/components';
+import { filter } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthSessionStore } from '../../core/auth/auth-session.store';
@@ -17,7 +13,7 @@ import { AuthSessionStore } from '../../core/auth/auth-session.store';
  */
 @Component({
   selector: 'app-tenant-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TButton, TTag],
+  imports: [RouterOutlet, RouterLink, TButton, TMenu, TMenuItem, TTag],
   templateUrl: './tenant-shell.html',
   styleUrl: './tenant-shell.less',
 })
@@ -30,6 +26,25 @@ export class TenantShell {
   protected readonly tenantSlug = this.route.snapshot.paramMap.get('tenantSlug') ?? '';
   protected readonly email = this.store.email;
   protected readonly loggingOut = signal(false);
+  protected readonly activeMenu = signal<'questionnaires' | 'question-bank'>('questionnaires');
+
+  constructor() {
+    this.syncActiveMenu(this.router.url);
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe((event) => this.syncActiveMenu(event.urlAfterRedirects));
+  }
+
+  protected onMenuChange(value: string | number): void {
+    const target = value === 'question-bank' ? 'question-bank' : 'questionnaires';
+    if (this.activeMenu() === target) {
+      return;
+    }
+    void this.router.navigate(['/t', this.tenantSlug, target]);
+  }
 
   protected async logout(): Promise<void> {
     if (this.loggingOut()) {
@@ -43,5 +58,9 @@ export class TenantShell {
       this.loggingOut.set(false);
       await this.router.navigate(['/t', this.tenantSlug, 'login']);
     }
+  }
+
+  private syncActiveMenu(url: string): void {
+    this.activeMenu.set(url.includes('/question-bank') ? 'question-bank' : 'questionnaires');
   }
 }
