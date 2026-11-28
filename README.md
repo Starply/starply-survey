@@ -2,7 +2,7 @@
 
 开源的现代 Web 端问卷系统。目标是使用 Angular + NestJS 构建多租户、中英双语的问卷平台，前后端同仓，使用 pnpm 组织。
 
-当前仓库已具备可用的端到端链路：多租户登录、顶栏式管理端布局、问卷列表与 CRUD、题库管理、编辑器、草稿保存与发布版本固化，以及无需登录的公开填写与回答提交。问卷内核（题型模型、schema 校验、作答校验、版本语义）为纯 TypeScript，前后端共用；运营统计、条件逻辑执行与邀请流程尚未实现。
+当前仓库已具备可用的端到端链路：多租户登录、顶栏式管理端布局、问卷列表与 CRUD、题库管理、编辑器、草稿保存与发布版本固化，以及无需登录的公开填写与回答提交。问卷内核（题型模型、schema 校验、作答校验、版本语义）为纯 TypeScript，前后端共用；高级统计图表、条件逻辑执行与邀请流程尚未实现。
 
 ## 技术栈
 
@@ -153,18 +153,19 @@ pnpm --filter @starply/api db:migration:generate src/database/migrations/AddXxx
 
 需登录；`TenantContextGuard` 解析租户并校验成员与角色权限。
 
-| 接口                                          | 权限             | 说明                                          |
-| --------------------------------------------- | ---------------- | --------------------------------------------- |
-| `POST /t/{slug}/questionnaires`               | `survey:create`  | 创建问卷，写入空分组草稿                      |
-| `GET /t/{slug}/questionnaires`                | `survey:read`    | 租户级列表，标题取当前草稿                    |
-| `GET /t/{slug}/questionnaires/{id}`           | `survey:read`    | 详情：草稿 + 最新发布版本内容                 |
-| `PUT /t/{slug}/questionnaires/{id}/draft`     | `survey:update`  | 覆盖保存草稿，允许半成品                      |
-| `POST /t/{slug}/questionnaires/{id}/publish`  | `survey:publish` | 校验草稿并生成不可变发布版本，版本号从 1 递增 |
-| `GET /t/{slug}/questionnaires/{id}/stats`     | `survey:read`    | 统计概览：答卷数、发布版本与最近发布时间      |
-| `GET /t/{slug}/questionnaires/{id}/responses` | `survey:read`    | 原始答卷分页，默认 20 条，最大 100 条         |
-| `DELETE /t/{slug}/questionnaires/{id}`        | `survey:delete`  | 删除问卷，版本与回答级联删除；成功返回 204    |
+| 接口                                                 | 权限             | 说明                                                |
+| ---------------------------------------------------- | ---------------- | --------------------------------------------------- |
+| `POST /t/{slug}/questionnaires`                      | `survey:create`  | 创建问卷，写入空分组草稿                            |
+| `GET /t/{slug}/questionnaires`                       | `survey:read`    | 租户级列表，标题取当前草稿                          |
+| `GET /t/{slug}/questionnaires/{id}`                  | `survey:read`    | 详情：草稿 + 最新发布版本内容                       |
+| `PUT /t/{slug}/questionnaires/{id}/draft`            | `survey:update`  | 覆盖保存草稿，允许半成品                            |
+| `POST /t/{slug}/questionnaires/{id}/publish`         | `survey:publish` | 校验草稿并生成不可变发布版本，版本号从 1 递增       |
+| `GET /t/{slug}/questionnaires/{id}/stats`            | `survey:read`    | 统计概览：答卷数、发布版本、最近发布时间与按题分布  |
+| `GET /t/{slug}/questionnaires/{id}/responses`        | `survey:read`    | 原始答卷分页，默认 20 条，最大 100 条               |
+| `GET /t/{slug}/questionnaires/{id}/responses/export` | `survey:read`    | 导出全部答卷为 CSV（UTF-8 BOM，题目列取已发布快照） |
+| `DELETE /t/{slug}/questionnaires/{id}`               | `survey:delete`  | 删除问卷，版本与回答级联删除；成功返回 204          |
 
-Web 管理端采用常规中后台布局：顶部菜单（问卷管理 / 题库）与下方内容区，路由使用 hash 模式。问卷列表为表格视图，支持搜索、状态筛选、新建、编辑、复制填写链接与删除；进入单份问卷后有「设计 / 统计 / 收集 / 原始数据」页签，收集页使用前端 `TQRCode` 生成二维码，原始数据页可查看单份答案。
+Web 管理端采用常规中后台布局：顶部 TDesign `TMenu`（问卷管理 / 题库）与下方内容区，路由使用 hash 模式。问卷列表为表格视图，支持搜索、状态筛选、新建、编辑、复制填写链接与删除；进入单份问卷后有「设计 / 统计 / 收集 / 原始数据」页签，统计页使用按需加载的 ECharts 展示选择题与评分题分布，收集页使用前端 `TQRCode` 生成二维码，原始数据页支持按题查看单份答案并导出 CSV。
 
 ## 题库（/t/{slug}/question-bank-items）
 
@@ -223,11 +224,11 @@ Web 管理端采用常规中后台布局：顶部菜单（问卷管理 / 题库�
 > tdesign-ng 实际可用组件、页面映射与待补能力见 [docs/tdesign-ng-component-priority.md](docs/tdesign-ng-component-priority.md)。
 
 1. Redis 与 BullMQ：ioredis 已用于会话存储并完成登录冒烟；BullMQ 与缓存/队列分实例尚未接入。
-2. 仍缺：注册与邀请激活、登录限流、问卷条件逻辑（visibleWhen/jumpRules）执行、回答统计与导出、公开填写限流与防刷。
+2. 仍缺：注册与邀请激活、登录限流、问卷条件逻辑（visibleWhen/jumpRules）执行、回答的时间/IP 筛选、公开填写限流与防刷。
 3. SSR/预渲染在组件库场景下未验证；当前默认 SPA。
 4. 图标清单是否覆盖首版题型仍待核对。
 5. 部署脚本（systemd/Nginx/回滚/备份）尚未落地。
-6. JSON 列已用于问卷内容与回答；回答列表分页、统计聚合与多租户条件注入仍待补齐。
+6. JSON 列已用于问卷内容与回答；回答列表分页与按题基础统计已补齐，更复杂的统计维度与多租户条件注入仍待完善。
 
 ## 许可
 

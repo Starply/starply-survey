@@ -27,21 +27,22 @@
 | `TInput` | 搜索、表单 | `value`、`(valueChange)`、`placeholder` | 正常 |
 | `TTag` | 状态、标签 | `theme`、`variant`、`size` | 正常 |
 | `TMessageService` | 全局提示 | `success`、`warning`、`error` | 正常 |
+| `TMenu` | 顶部外壳主导航 | `mode="horizontal"`、`theme="light"`、`[value]`、`(valueChange)`、`<t-menu-item>` 内容投影 | 正常渲染并切换选中态；未内置 RouterLink，需页面用 `Router.navigate` + `NavigationEnd` 同步 |
 | `TCard` | 列表筛选区 / 表格容器 | `bordered` + 内容投影 | **不可用**：投影内容不渲染，已回退为自定义 TDesign 令牌样式面板 |
 
-样式方面按组件单独引入 `@tdesign-ng/styles/components/*.less`，当前已加入 table、pagination、dialog、select、popup、loading、empty、card、tabs，未整包引入。
+样式方面按组件单独引入 `@tdesign-ng/styles/components/*.less`，当前已加入 table、pagination、dialog、select、popup、loading、empty、card、tabs、menu，未整包引入。
 
 ## 3. 页面与组件映射
 
 | 页面 | 已用组件 | 后续需要 |
 | --- | --- | --- |
-| 顶部外壳 `TenantShell` | Button、Tag | Menu / Dropdown / Avatar（账号菜单、租户切换） |
+| 顶部外壳 `TenantShell` | Menu（主导航）、Button、Tag | Dropdown / Avatar（账号菜单、租户切换） |
 | 问卷列表 | Table、Pagination（Table 内置）、Select、Input、Dialog、Button、Tag、Message | Popconfirm（删除确认）、日期组件（时间筛选） |
 | 题库列表 | Table、Pagination、Select、Input、Button、Tag、Message | Popconfirm、批量操作（Checkbox/Table 选择列） |
 | 问卷编辑器 | Button、Input、Textarea、Tag、Message | Tabs（大纲/设置）、InputNumber（评分）、Upload（上传题）、DatePicker（日期题）、Tree/List（题目大纲）、Drawer（移动端设置） |
 | 题库编辑页 | Button、Input、Textarea、Message | InputNumber、TagInput、Tabs |
 | 登录 / 公开填写 | Input、Button、Message | Form 校验、Radio / Checkbox 题型组件（当前公开页为原生控件） |
-| 数据统计 | — | Tabs、Statistic、Empty、ECharts |
+| 数据统计 | ECharts（选择题/评分题分布，按需动态加载） | Tabs、Statistic、Empty |
 | 答卷收集 | — | Tabs、QRCode、Button、Message（复制链接/打开问卷） |
 | 原始数据 | — | Table、DateRangePicker、Input、Checkbox、Popconfirm、导出按钮 |
 
@@ -67,7 +68,7 @@
 ### P1：中后台下一批页面需要
 
 4. **TPopconfirm**：用于删除问卷/题目的二次确认，替换当前的 `window.confirm`。
-5. **TDropdown / TMenu**：顶部账号菜单（个人中心、退出）、租户切换；当前外壳是手写链接。
+5. **TDropdown**：顶部账号菜单（个人中心、退出）、租户切换；主导航已改用 `TMenu`，账号区仍需 Dropdown / Avatar。
 6. **TForm 校验**：邀请成员、个人资料、改密等表单需要统一的必填/长度/错误展示；当前表单是手写校验。
 7. **TInputNumber**：题库评分范围、数字题 min/max 配置；当前用普通 Input 解析数字。
 8. **TTabs**：编辑器「大纲 / 题库 / 问卷设置 / 题目设置」需要页签容器；组件入口已存在，尚未在页面验证。

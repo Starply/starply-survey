@@ -190,10 +190,10 @@
 | --- | --- | --- |
 | 列表 | Table、Pagination、Select、Input、Button、Tag、Message | Dropdown、Popconfirm、Table 选择列 |
 | 设计页 | Button、Input、Textarea、Tag | Tabs、InputNumber、Upload、DatePicker、Tree/List、Drawer |
-| 统计页 | Button、Tag | Tabs、Statistic、Empty、ECharts |
-| 收集页 | Button、Input、Message | Tabs、QRCode |
+| 统计页 | Button、Tag、TMenu、ECharts | Tabs、Statistic、Empty |
+| 收集页 | Button、Input、Message、QRCode | Tabs |
 | 数据页 | Table、Pagination、Input、Button | DateRangePicker、Checkbox、Popconfirm、导出 |
-| 外壳 | Button、Tag | Menu/Dropdown、Avatar |
+| 外壳 | Button、Tag、TMenu | Dropdown、Avatar |
 
 已知阻塞：`TCard` 在 npm 0.1.1 中内容投影不渲染，暂用 TDesign 令牌样式面板替代。
 
@@ -221,16 +221,17 @@
 
 已完成：
 
+- 顶部导航改用 TDesign `TMenu`，根据当前路由同步选中态。
 - Web 切换为 hash 路由，公开填写链接统一带 `#`。
 - 问卷列表增加答卷数、创建时间，删除改为 TDesign 对话框确认。
 - 单份问卷增加「设计 / 统计 / 收集 / 原始数据」页签。
 - 答卷收集页：已发布时展示链接、复制、打开与前端 `TQRCode` 二维码；草稿状态给出发布引导。
-- 数据统计页：展示答卷数、状态、当前版本与最近发布时间；图表区暂为空状态。
-- 原始数据页：分页表格 + 单份答卷 JSON 查看。
-- API 新增 `GET /t/{slug}/questionnaires/{id}/stats` 与 `GET .../responses`，列表返回 `responseCount`。
+- 数据统计页：展示答卷数、状态、当前版本与最近发布时间；已发布问卷按题型用 ECharts 展示选择题与评分题分布，文本题展示作答数。
+- 原始数据页：分页表格 + 按题字段化查看单份答卷 + 导出 CSV（UTF-8 BOM，选择题映射选项文案）。
+- API 新增 `GET /t/{slug}/questionnaires/{id}/stats`、`GET .../responses` 与 `GET .../responses/export`，列表返回 `responseCount`；统计响应包含按题聚合的 `questions`。
 
 待继续：
 
-- 统计页接入 ECharts，按题型输出图表。
-- 原始数据的时间/IP 筛选、导出与单份答卷详情字段化展示。
+- 原始数据的时间/IP 筛选（IP 需新增采集字段与迁移）。
+- 统计页补充多选堆叠、矩阵题等更复杂题型，以及按版本/时间维度筛选。
 - 编辑器改为「题型面板 / 画布 / 设置」三栏，并补题目大纲与拖拽排序。
