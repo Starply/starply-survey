@@ -6,10 +6,12 @@ import type {
   LanguageTag,
   LocalizedText,
   ReadonlySurveyContent,
+  SurveyAnswers,
   SurveyContent,
 } from '@starply/questionnaire-core';
 
 export type {
+  AnswerValue,
   ChoiceLayout,
   ChoiceOption,
   ConditionGroupNode,
@@ -36,6 +38,7 @@ export type {
   SingleChoiceQuestionConfig,
   SurveyContent,
   SurveyDraft,
+  SurveyAnswers,
   TextQuestionConfig,
   TextareaQuestionConfig,
   ValidationIssue,
@@ -122,12 +125,44 @@ export interface QuestionnaireListResponse {
 
 export type PublishQuestionnaireResponse = PublishedVersionSummary;
 
+// ---------------------------------------------------------------------------
+// 公开填写接口（无需登录）
+// ---------------------------------------------------------------------------
+
+/**
+ * 公开问卷：只暴露最新已发布版本的内容快照。
+ * 未发布的问卷不提供公开访问，避免草稿泄露。
+ */
+export interface PublicQuestionnaireResponse {
+  questionnaireId: string;
+  tenantSlug: string;
+  slug: string;
+  version: number;
+  schemaVersion: number;
+  publishedAt: string;
+  content: ReadonlySurveyContent;
+}
+
+/** 提交回答：answers 以题目 id 为键，language 记录填写时使用的语言。 */
+export interface SubmitSurveyResponseRequest {
+  answers: SurveyAnswers;
+  language?: LanguageTag;
+}
+
+export interface SubmitSurveyResponseResult {
+  responseId: string;
+  /** 提交时间（ISO 8601）。 */
+  submittedAt: string;
+}
+
 /** 问卷与租户上下文相关的错误码，前端据此决定提示与跳转。 */
 export type QuestionnaireErrorCode =
   | 'invalid_request'
   | 'invalid_slug'
   | 'questionnaire_not_found'
   | 'questionnaire_slug_taken'
+  | 'questionnaire_not_published'
+  | 'answers_invalid'
   | 'draft_missing'
   | 'survey_invalid'
   | 'tenant_not_found'

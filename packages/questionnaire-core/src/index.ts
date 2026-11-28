@@ -6,6 +6,7 @@
 export * from './localization';
 export * from './types';
 export * from './validation';
+export * from './answers';
 export * from './versioning';
 
 /** 包自身版本，供问卷内容与发布快照绑定使用。 */

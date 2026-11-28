@@ -257,6 +257,16 @@ export interface PublishSurveyOptions {
 }
 
 // ---------------------------------------------------------------------------
+// 作答（填写）
+// ---------------------------------------------------------------------------
+
+/** 单题作答值：文本/日期/单选为字符串，数字/评分为数字，多选为字符串数组。 */
+export type AnswerValue = string | number | readonly string[];
+
+/** 以题目 id 为键的作答；未作答的题目可以不出现。 */
+export type SurveyAnswers = Readonly<Record<QuestionId, AnswerValue>>;
+
+// ---------------------------------------------------------------------------
 // 校验结果
 // ---------------------------------------------------------------------------
 
@@ -289,7 +299,17 @@ export type ValidationIssueCode =
   | 'UNKNOWN_GROUP_REFERENCE'
   | 'OPERATOR_TYPE_MISMATCH'
   | 'LOGIC_NESTING_TOO_DEEP'
-  | 'INVALID_VERSION';
+  | 'INVALID_VERSION'
+  // 作答校验
+  | 'UNKNOWN_ANSWER_QUESTION'
+  | 'MISSING_REQUIRED_ANSWER'
+  | 'INVALID_ANSWER_TYPE'
+  | 'INVALID_ANSWER_OPTION'
+  | 'INVALID_ANSWER_LENGTH'
+  | 'INVALID_ANSWER_EMAIL'
+  | 'INVALID_ANSWER_DATE'
+  | 'ANSWER_OUT_OF_RANGE'
+  | 'EXCLUSIVE_OPTION_CONFLICT';
 
 export interface ValidationIssue {
   code: ValidationIssueCode;
