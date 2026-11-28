@@ -24,6 +24,7 @@
     "@nestjs/platform-express": "catalog:",
     "@starply/auth-core": "workspace:*",
     "@starply/contracts": "workspace:*",
+    "@starply/dev-fixtures": "workspace:*",
     "@starply/questionnaire-core": "workspace:*",
     "@starply/tenancy-core": "workspace:*",
     "ioredis": "catalog:",

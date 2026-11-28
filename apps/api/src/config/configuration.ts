@@ -1,3 +1,5 @@
+import { DEVELOPMENT_ACCOUNT } from '@starply/dev-fixtures';
+
 export interface DatabaseConfig {
   host: string;
   port: number;
@@ -18,10 +20,6 @@ export interface AuthConfig {
   accessTokenSecret: string;
 }
 
-/**
- * 默认账号：本地演示数据（pnpm db:seed:demo）使用的租户与管理员。
- * 集中在一处配置，seed 脚本与后续初始化流程共用；生产环境必须通过环境变量覆盖。
- */
 export interface DefaultAccountConfig {
   tenantSlug: string;
   tenantName: string;
@@ -44,37 +42,35 @@ export interface AppConfiguration {
 }
 
 /**
- * 开发环境默认账号；未设置任何环境变量时本地可直接登录。
- * 优先级：DEFAULT_ACCOUNT_* > 旧版 DEMO_* > 内置开发默认值。
+ * 默认账号：本地演示数据（pnpm db:seed:demo）使用的租户与管理员。
+ * 开发默认值来自 @starply/dev-fixtures，与前端开发登录页共用同一份配置；
+ * 生产环境不读取内置测试账号，必须显式提供 DEFAULT_ACCOUNT_* 环境变量。
  */
-export const DEVELOPMENT_DEFAULT_ACCOUNT = {
-  tenantSlug: 'acme',
-  email: 'demo@starply.dev',
-  password: 'Starply@2026',
-  displayName: '演示管理员',
-} as const;
-
 export function readDefaultAccountConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): DefaultAccountConfig {
-  const fallback = DEVELOPMENT_DEFAULT_ACCOUNT;
+  const fallback = env['NODE_ENV'] === 'production' ? null : DEVELOPMENT_ACCOUNT;
   const tenantSlug =
     env['DEFAULT_ACCOUNT_TENANT_SLUG']?.trim() ||
     env['DEMO_TENANT_SLUG']?.trim() ||
-    fallback.tenantSlug;
+    fallback?.tenantSlug ||
+    '';
 
   return {
     tenantSlug,
     tenantName:
       env['DEFAULT_ACCOUNT_TENANT_NAME']?.trim() ||
       env['DEMO_TENANT_NAME']?.trim() ||
-      `${tenantSlug} 演示租户`,
-    email: env['DEFAULT_ACCOUNT_EMAIL']?.trim() || env['DEMO_EMAIL']?.trim() || fallback.email,
-    password: env['DEFAULT_ACCOUNT_PASSWORD'] || env['DEMO_PASSWORD'] || fallback.password,
+      fallback?.tenantName ||
+      (tenantSlug.length > 0 ? `${tenantSlug} 租户` : ''),
+    email:
+      env['DEFAULT_ACCOUNT_EMAIL']?.trim() || env['DEMO_EMAIL']?.trim() || fallback?.email || '',
+    password: env['DEFAULT_ACCOUNT_PASSWORD'] || env['DEMO_PASSWORD'] || fallback?.password || '',
     displayName:
       env['DEFAULT_ACCOUNT_DISPLAY_NAME']?.trim() ||
       env['DEMO_DISPLAY_NAME']?.trim() ||
-      fallback.displayName,
+      fallback?.displayName ||
+      '',
   };
 }
 

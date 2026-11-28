@@ -3,6 +3,9 @@
     <header class="login-header">
       <h1>Starply Survey</h1>
       <p>登录租户管理端，创建并发布问卷。</p>
+      @if (usingDevAccount) {
+      <p class="dev-hint">已填入开发测试账号，可直接登录。</p>
+      }
     </header>
 
     <div class="field">

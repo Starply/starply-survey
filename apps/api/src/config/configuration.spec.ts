@@ -1,9 +1,7 @@
+import { DEVELOPMENT_ACCOUNT } from '@starply/dev-fixtures';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import configuration, {
-  DEVELOPMENT_DEFAULT_ACCOUNT,
-  readDefaultAccountConfig,
-} from './configuration';
+import configuration, { readDefaultAccountConfig } from './configuration';
 
 const CONFIG_KEYS = [
   'NODE_ENV',
@@ -59,7 +57,7 @@ describe('configuration', () => {
     expect(config.database.poolSize).toBe(10);
     expect(config.redis.port).toBe(6379);
     expect(config.auth.accessTokenSecret).toBe('');
-    expect(config.defaultAccount).toMatchObject(DEVELOPMENT_DEFAULT_ACCOUNT);
+    expect(config.defaultAccount).toMatchObject(DEVELOPMENT_ACCOUNT);
   });
 
   it('reads overrides from env', () => {
@@ -87,8 +85,20 @@ describe('readDefaultAccountConfig', () => {
   it('未配置环境变量时返回开发默认账号', () => {
     const account = readDefaultAccountConfig({});
 
-    expect(account).toMatchObject(DEVELOPMENT_DEFAULT_ACCOUNT);
-    expect(account.tenantName).toBe(`${DEVELOPMENT_DEFAULT_ACCOUNT.tenantSlug} 演示租户`);
+    expect(account).toMatchObject(DEVELOPMENT_ACCOUNT);
+    expect(account.tenantName).toBe(DEVELOPMENT_ACCOUNT.tenantName);
+  });
+
+  it('生产环境不提供内置测试账号', () => {
+    const account = readDefaultAccountConfig({ NODE_ENV: 'production' } as NodeJS.ProcessEnv);
+
+    expect(account).toEqual({
+      tenantSlug: '',
+      tenantName: '',
+      email: '',
+      password: '',
+      displayName: '',
+    });
   });
 
   it('DEFAULT_ACCOUNT_* 优先于旧版 DEMO_* 与默认值', () => {

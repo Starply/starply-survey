@@ -5,6 +5,7 @@ import { TButton, TInput } from '@tdesign-ng/components';
 
 import { describeApiError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
+import { environment } from '../../../environments/environment';
 
 /**
  * 登录页。
@@ -22,9 +23,15 @@ export class LoginPage {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
 
-  protected readonly tenantSlug = signal(this.initialTenantSlug());
-  protected readonly email = signal('');
-  protected readonly password = signal('');
+  /** 仅开发构建带出默认账号；生产包中 defaultAccount 为 null。 */
+  private readonly defaultAccount = environment.production ? null : environment.defaultAccount;
+
+  protected readonly tenantSlug = signal(
+    this.initialTenantSlug() || this.defaultAccount?.tenantSlug || '',
+  );
+  protected readonly email = signal(this.defaultAccount?.email ?? '');
+  protected readonly password = signal(this.defaultAccount?.password ?? '');
+  protected readonly usingDevAccount = this.defaultAccount !== null;
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
 

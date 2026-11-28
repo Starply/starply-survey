@@ -1,0 +1,28 @@
+{
+  "name": "@starply/dev-fixtures",
+  "version": "0.0.0",
+  "private": true,
+  "description": "本地联调默认账号（仅供开发构建与 seed 脚本使用，不进入生产前端包）",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "tslib": "catalog:"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}
