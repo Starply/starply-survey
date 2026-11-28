@@ -243,6 +243,14 @@ export class TypeormQuestionnaireRepository extends QuestionnaireRepository {
     });
   }
 
+  async delete(tenantId: string, questionnaireId: string): Promise<boolean> {
+    const result = await this.dataSource
+      .getRepository(Questionnaire)
+      .delete({ id: questionnaireId, tenantId });
+
+    return (result.affected ?? 0) > 0;
+  }
+
   /** 锁住问卷行，串行化同一问卷的发布；锁必须处于事务中。 */
   private lockQuestionnaire(
     manager: EntityManager,

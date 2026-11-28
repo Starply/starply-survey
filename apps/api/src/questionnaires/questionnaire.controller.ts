@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import type {
   PublishQuestionnaireResponse,
   QuestionnaireDetailResponse,
@@ -64,5 +76,16 @@ export class QuestionnaireController {
     @Req() request: TenantRequest,
   ): Promise<PublishQuestionnaireResponse> {
     return this.questionnaires.publish(request.tenant!.id, questionnaireId);
+  }
+
+  /** 删除问卷，版本与回答级联删除；成功返回 204。 */
+  @Delete(':questionnaireId')
+  @RequireTenantPermission('survey:delete')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(
+    @Param('questionnaireId') questionnaireId: string,
+    @Req() request: TenantRequest,
+  ): Promise<void> {
+    return this.questionnaires.delete(request.tenant!.id, questionnaireId);
   }
 }

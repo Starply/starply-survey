@@ -1,5 +1,6 @@
 import { Invitation } from './invitation.entity';
 import { Membership } from './membership.entity';
+import { QuestionBankItem } from './question-bank-item.entity';
 import { Questionnaire } from './questionnaire.entity';
 import { QuestionnaireVersion } from './questionnaire-version.entity';
 import { SurveyResponse } from './survey-response.entity';
@@ -15,11 +16,13 @@ export const ENTITIES = [
   Questionnaire,
   QuestionnaireVersion,
   SurveyResponse,
+  QuestionBankItem,
 ];
 
 export {
   Invitation,
   Membership,
+  QuestionBankItem,
   Questionnaire,
   QuestionnaireVersion,
   SurveyResponse,

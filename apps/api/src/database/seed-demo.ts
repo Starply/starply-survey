@@ -4,6 +4,7 @@ import { hash } from '@node-rs/argon2';
 import type { TenantRole } from '@starply/contracts';
 import { checkTenantSlug } from '@starply/tenancy-core';
 
+import { readDefaultAccountConfig, type DefaultAccountConfig } from '../config/configuration';
 import { createAppDataSource } from './data-source';
 import { Membership, Tenant, User } from './entities';
 
@@ -11,48 +12,32 @@ import { Membership, Tenant, User } from './entities';
  * 开发环境演示数据。
  * 目前没有注册/建租户接口，本地联调用它写入一个 owner 账号；
  * 幂等执行：按 slug/email 查找，存在则更新角色、状态与密码哈希。
- * 账号信息全部来自环境变量，脚本内不保存任何凭据。
+ * 账号信息来自集中的默认账号配置（DEFAULT_ACCOUNT_*，兼容旧版 DEMO_*），
+ * 未配置时使用内置开发默认值，脚本内不保存生产凭据。
  * 运行方式：pnpm db:seed:demo（读取 .env）。
  */
-export interface DemoSeedConfig {
-  tenantSlug: string;
-  tenantName: string;
-  email: string;
-  password: string;
-  displayName: string;
-}
+export type DemoSeedConfig = DefaultAccountConfig;
 
 export function readDemoSeedConfig(env: NodeJS.ProcessEnv = process.env): DemoSeedConfig {
-  const rawSlug = env['DEMO_TENANT_SLUG']?.trim() ?? '';
-  const email = env['DEMO_EMAIL']?.trim() ?? '';
-  const password = env['DEMO_PASSWORD'] ?? '';
+  const account = readDefaultAccountConfig(env);
 
-  const missing: string[] = [];
-  if (rawSlug.length === 0) {
-    missing.push('DEMO_TENANT_SLUG');
-  }
-  if (email.length === 0) {
-    missing.push('DEMO_EMAIL');
-  }
-  if (password.length === 0) {
-    missing.push('DEMO_PASSWORD');
-  }
-  if (missing.length > 0) {
-    throw new Error(`缺少演示账号环境变量：${missing.join(', ')}（参考 apps/api/.env.example）`);
-  }
-
-  const slug = checkTenantSlug(rawSlug);
+  const slug = checkTenantSlug(account.tenantSlug);
   if (!slug.ok) {
-    throw new Error(`DEMO_TENANT_SLUG 不合法（${slug.issue}），需为 3-63 位小写字母、数字或连字符`);
+    throw new Error(
+      `默认账号租户 slug 不合法（${slug.issue}），需为 3-63 位小写字母、数字或连字符`,
+    );
   }
 
-  return {
-    tenantSlug: slug.slug,
-    tenantName: env['DEMO_TENANT_NAME']?.trim() || `${slug.slug} 演示租户`,
-    email,
-    password,
-    displayName: env['DEMO_DISPLAY_NAME']?.trim() || '演示管理员',
-  };
+  const email = account.email.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error('默认账号邮箱不合法，请检查 DEFAULT_ACCOUNT_EMAIL / DEMO_EMAIL');
+  }
+
+  if (account.password.length === 0) {
+    throw new Error('默认账号密码不能为空，请检查 DEFAULT_ACCOUNT_PASSWORD / DEMO_PASSWORD');
+  }
+
+  return { ...account, tenantSlug: slug.slug, email };
 }
 
 export async function seedDemoData(
@@ -130,7 +115,8 @@ seedDemoData()
     const config = readDemoSeedConfig();
     console.log('演示数据已就绪：');
     console.log(`  租户 slug: ${config.tenantSlug}（${tenantId}）`);
-    console.log(`  登录邮箱: ${config.email}（${userId}），密码取自 DEMO_PASSWORD`);
+    console.log(`  登录邮箱: ${config.email}（${userId}）`);
+    console.log('  密码来自 DEFAULT_ACCOUNT_PASSWORD / DEMO_PASSWORD（未配置时为开发默认值）');
   })
   .catch((error: unknown) => {
     console.error('演示数据写入失败', error);

@@ -139,6 +139,16 @@ class InMemoryQuestionnaireRepository extends QuestionnaireRepository {
     return { ok: true, version: published };
   }
 
+  async delete(tenantId: string, questionnaireId: string): Promise<boolean> {
+    const detail = this.details.get(questionnaireId);
+    if (!detail || detail.tenantId !== tenantId) {
+      return false;
+    }
+
+    this.details.delete(questionnaireId);
+    return true;
+  }
+
   private findBySlug(tenantId: string, slug: string): QuestionnaireDetail | null {
     for (const detail of this.details.values()) {
       if (detail.tenantId === tenantId && detail.slug === slug) {
@@ -401,6 +411,40 @@ describe('QuestionnaireService.publish', () => {
 
     await expect(
       capture<NotFoundException>(() => service.publish('tenant-1', 'missing')),
+    ).resolves.toMatchObject({ response: { code: 'questionnaire_not_found' } });
+  });
+});
+
+describe('QuestionnaireService.delete', () => {
+  it('删除问卷后列表与详情都不再返回', async () => {
+    const { service } = createService();
+    const created = await service.create('tenant-1', 'user-1', createRequest());
+
+    await service.delete('tenant-1', created.id);
+
+    await expect(service.list('tenant-1')).resolves.toEqual({ items: [] });
+    await expect(
+      capture<NotFoundException>(() => service.get('tenant-1', created.id)),
+    ).resolves.toMatchObject({ response: { code: 'questionnaire_not_found' } });
+  });
+
+  it('不能删除其他租户的问卷', async () => {
+    const { service } = createService();
+    const created = await service.create('tenant-1', 'user-1', createRequest());
+
+    await expect(
+      capture<NotFoundException>(() => service.delete('tenant-2', created.id)),
+    ).resolves.toMatchObject({ response: { code: 'questionnaire_not_found' } });
+    await expect(service.get('tenant-1', created.id)).resolves.toMatchObject({
+      id: created.id,
+    });
+  });
+
+  it('删除不存在的问卷返回 404', async () => {
+    const { service } = createService();
+
+    await expect(
+      capture<NotFoundException>(() => service.delete('tenant-1', 'missing')),
     ).resolves.toMatchObject({ response: { code: 'questionnaire_not_found' } });
   });
 });

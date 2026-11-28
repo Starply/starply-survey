@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import configuration from './configuration';
+import configuration, {
+  DEVELOPMENT_DEFAULT_ACCOUNT,
+  readDefaultAccountConfig,
+} from './configuration';
 
 const CONFIG_KEYS = [
   'NODE_ENV',
@@ -17,6 +20,11 @@ const CONFIG_KEYS = [
   'REDIS_PORT',
   'REDIS_PASSWORD',
   'AUTH_ACCESS_TOKEN_SECRET',
+  'DEFAULT_ACCOUNT_TENANT_SLUG',
+  'DEFAULT_ACCOUNT_TENANT_NAME',
+  'DEFAULT_ACCOUNT_EMAIL',
+  'DEFAULT_ACCOUNT_PASSWORD',
+  'DEFAULT_ACCOUNT_DISPLAY_NAME',
 ];
 
 describe('configuration', () => {
@@ -51,6 +59,7 @@ describe('configuration', () => {
     expect(config.database.poolSize).toBe(10);
     expect(config.redis.port).toBe(6379);
     expect(config.auth.accessTokenSecret).toBe('');
+    expect(config.defaultAccount).toMatchObject(DEVELOPMENT_DEFAULT_ACCOUNT);
   });
 
   it('reads overrides from env', () => {
@@ -71,5 +80,52 @@ describe('configuration', () => {
     expect(config.database.host).toBe('db.local');
     expect(config.redis.port).toBe(6380);
     expect(config.auth.accessTokenSecret).toBe('secret-from-env');
+  });
+});
+
+describe('readDefaultAccountConfig', () => {
+  it('未配置环境变量时返回开发默认账号', () => {
+    const account = readDefaultAccountConfig({});
+
+    expect(account).toMatchObject(DEVELOPMENT_DEFAULT_ACCOUNT);
+    expect(account.tenantName).toBe(`${DEVELOPMENT_DEFAULT_ACCOUNT.tenantSlug} 演示租户`);
+  });
+
+  it('DEFAULT_ACCOUNT_* 优先于旧版 DEMO_* 与默认值', () => {
+    const account = readDefaultAccountConfig({
+      DEFAULT_ACCOUNT_TENANT_SLUG: 'survey-lab',
+      DEFAULT_ACCOUNT_EMAIL: 'admin@example.com',
+      DEFAULT_ACCOUNT_PASSWORD: 'secret-1',
+      DEFAULT_ACCOUNT_TENANT_NAME: '调研实验室',
+      DEFAULT_ACCOUNT_DISPLAY_NAME: '实验室管理员',
+      DEMO_EMAIL: 'legacy@example.com',
+      DEMO_PASSWORD: 'legacy-secret',
+    } as NodeJS.ProcessEnv);
+
+    expect(account).toEqual({
+      tenantSlug: 'survey-lab',
+      tenantName: '调研实验室',
+      email: 'admin@example.com',
+      password: 'secret-1',
+      displayName: '实验室管理员',
+    });
+  });
+
+  it('兼容只看 DEMO_* 的旧环境变量', () => {
+    const account = readDefaultAccountConfig({
+      DEMO_TENANT_SLUG: 'legacy-tenant',
+      DEMO_EMAIL: 'legacy@example.com',
+      DEMO_PASSWORD: 'legacy-secret',
+      DEMO_TENANT_NAME: '旧租户',
+      DEMO_DISPLAY_NAME: '旧管理员',
+    } as NodeJS.ProcessEnv);
+
+    expect(account).toEqual({
+      tenantSlug: 'legacy-tenant',
+      tenantName: '旧租户',
+      email: 'legacy@example.com',
+      password: 'legacy-secret',
+      displayName: '旧管理员',
+    });
   });
 });

@@ -101,4 +101,7 @@ export abstract class QuestionnaireRepository {
     questionnaireId: string,
     buildSnapshot: PublishedSnapshotBuilder,
   ): Promise<PublishQuestionnaireOutcome>;
+
+  /** 删除问卷主体；版本与回答由外键级联删除。不存在或不属于该租户时返回 false。 */
+  abstract delete(tenantId: string, questionnaireId: string): Promise<boolean>;
 }

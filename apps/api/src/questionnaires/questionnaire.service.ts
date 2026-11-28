@@ -128,6 +128,17 @@ export class QuestionnaireService {
     return toDetailResponse(detail);
   }
 
+  /**
+   * 删除问卷。
+   * 问卷版本与回答通过外键级联删除，避免残留孤儿数据；不存在或跨租户时统一 404。
+   */
+  async delete(tenantId: string, questionnaireId: string): Promise<void> {
+    const deleted = await this.repository.delete(tenantId, questionnaireId);
+    if (!deleted) {
+      throw questionnaireNotFound();
+    }
+  }
+
   async publish(tenantId: string, questionnaireId: string): Promise<PublishQuestionnaireResponse> {
     try {
       const outcome = await this.repository.publish(

@@ -6,6 +6,7 @@ import configuration from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { HealthController } from './health/health.controller';
 import { PublicSurveyModule } from './public-survey/public-survey.module';
+import { QuestionBankModule } from './question-bank/question-bank.module';
 import { QuestionnairesModule } from './questionnaires/questionnaires.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { QuestionnairesModule } from './questionnaires/questionnaires.module';
     DatabaseModule,
     AuthModule,
     QuestionnairesModule,
+    QuestionBankModule,
     PublicSurveyModule,
   ],
   controllers: [HealthController],
