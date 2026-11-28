@@ -28,6 +28,11 @@ export class ApiClient {
     return firstValueFrom(this.http.put<T>(this.resolve(path), body));
   }
 
+  /** DELETE 通常返回 204，此时 Promise 解析为 null。 */
+  delete<T = void>(path: string): Promise<T> {
+    return firstValueFrom(this.http.delete<T>(this.resolve(path)));
+  }
+
   private resolve(path: string): string {
     return path.startsWith('/') ? `${this.baseUrl}${path}` : `${this.baseUrl}/${path}`;
   }

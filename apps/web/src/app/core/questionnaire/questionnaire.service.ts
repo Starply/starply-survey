@@ -55,6 +55,10 @@ export class QuestionnaireService {
     );
   }
 
+  async remove(tenantSlug: string, questionnaireId: string): Promise<void> {
+    await this.api.delete(`${this.base(tenantSlug)}/${encodeURIComponent(questionnaireId)}`);
+  }
+
   private base(tenantSlug: string): string {
     return `/t/${encodeURIComponent(tenantSlug)}/questionnaires`;
   }

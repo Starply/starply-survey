@@ -1,0 +1,118 @@
+<section class="editor-head">
+  <div class="head-main">
+    <a class="back" [routerLink]="['/t', tenantSlug, 'question-bank']">← 返回题库</a>
+    <div class="title-row">
+      <h1>{{ heading() }}</h1>
+      <span class="type-badge">{{ typeLabel() }}</span>
+    </div>
+    <p class="hint">题库条目是可复用的题目模板，可先保存半成品，不影响已发布问卷。</p>
+  </div>
+
+  <div class="head-actions">
+    <t-button variant="outline" [disabled]="saving()" (click)="cancel()">取消</t-button>
+    <t-button
+      theme="primary"
+      [loading]="saving()"
+      [disabled]="saving() || loading()"
+      (click)="save()"
+    >
+      保存
+    </t-button>
+  </div>
+</section>
+
+@if (loading()) {
+<p class="placeholder">正在加载题库条目…</p>
+} @else if (loadError(); as message) {
+<section class="panel">
+  <p class="error" role="alert">{{ message }}</p>
+  <t-button variant="outline" (click)="cancel()">返回题库</t-button>
+</section>
+} @else {
+<section class="panel">
+  <h2>基本信息</h2>
+  <div class="form-grid">
+    <label class="field">
+      <span class="field-label">题型</span>
+      <select class="type-select" [value]="type()" (change)="onTypeChange($event)">
+        @for (option of questionTypeOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field-label">标签（逗号分隔）</span>
+      <t-input
+        [value]="tagsInput()"
+        (valueChange)="onTagsChange($event)"
+        placeholder="例如 基本信息, 满意度"
+      />
+    </label>
+    <label class="field field-wide">
+      <span class="field-label">标题（zh-CN）</span>
+      <t-input [value]="titleText()" (valueChange)="onTitleChange($event)" placeholder="题目标题" />
+    </label>
+    <label class="field field-wide">
+      <span class="field-label">描述（可选）</span>
+      <t-textarea
+        [value]="descriptionText()"
+        (valueChange)="onDescriptionChange($event)"
+        [autosize]="{ minRows: 2, maxRows: 4 }"
+        placeholder="向填写者补充说明"
+      />
+    </label>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>题型配置</h2>
+
+  @if (isChoiceType()) {
+  <ul class="options">
+    @for (option of options(); track option.id; let optionIndex = $index) {
+    <li class="option">
+      <span class="option-index">{{ optionIndex + 1 }}</span>
+      <t-input
+        [value]="optionLabel(option)"
+        (valueChange)="onOptionLabelChange(option.id, $event)"
+        placeholder="选项文案"
+      />
+      <t-button variant="text" theme="danger" size="small" (click)="removeOption(option.id)">
+        移除
+      </t-button>
+    </li>
+    }
+  </ul>
+  <t-button variant="text" size="small" (click)="addOption()">添加选项</t-button>
+  } @else if (type() === 'rating') {
+  <label class="field field-narrow">
+    <span class="field-label">最高分（2-10）</span>
+    <t-input [value]="ratingMaxText()" (valueChange)="onRatingMaxChange($event)" placeholder="5" />
+  </label>
+  } @else if (type() === 'number') {
+  <div class="form-grid">
+    <label class="field">
+      <span class="field-label">最小值（可选）</span>
+      <t-input
+        [value]="numberMinText()"
+        (valueChange)="onNumberMinChange($event)"
+        placeholder="例如 0"
+      />
+    </label>
+    <label class="field">
+      <span class="field-label">最大值（可选）</span>
+      <t-input
+        [value]="numberMaxText()"
+        (valueChange)="onNumberMaxChange($event)"
+        placeholder="例如 100"
+      />
+    </label>
+  </div>
+  } @else {
+  <p class="placeholder">当前题型暂无额外配置。</p>
+  }
+</section>
+
+@if (formError(); as message) {
+<p class="error" role="alert">{{ message }}</p>
+} }

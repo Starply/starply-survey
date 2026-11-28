@@ -11,8 +11,8 @@ import { QuestionnaireService } from '../../core/questionnaire/questionnaire.ser
 import { formatDateTime, textFor } from '../../shared/text';
 
 /**
- * 租户问卷列表。
- * 列表来自租户级接口，展示标题、状态与最近更新时间；新建后直接进入编辑器。
+ * 租户问卷列表：常规中后台表格 + 新建/编辑/复制链接/删除。
+ * 列表来自租户级接口，标题取当前草稿；只有已发布问卷才提供公开填写链接。
  */
 @Component({
   selector: 'app-questionnaire-list-page',
@@ -30,7 +30,9 @@ export class QuestionnaireListPage {
   protected readonly items = signal<readonly QuestionnaireSummaryResponse[]>([]);
   protected readonly loading = signal(true);
   protected readonly loadError = signal<string | null>(null);
+  protected readonly deletingId = signal<string | null>(null);
 
+  protected readonly showCreate = signal(false);
   protected readonly creating = signal(false);
   protected readonly formError = signal<string | null>(null);
   protected readonly newSlug = signal('');
@@ -55,12 +57,58 @@ export class QuestionnaireListPage {
     }
   }
 
+  protected toggleCreate(): void {
+    this.showCreate.update((visible) => !visible);
+    this.formError.set(null);
+  }
+
   protected titleOf(item: QuestionnaireSummaryResponse): string {
     return textFor(item.title, item.defaultLanguage) || item.slug;
   }
 
   protected updatedAtOf(item: QuestionnaireSummaryResponse): string {
     return formatDateTime(item.updatedAt);
+  }
+
+  protected statusLabel(item: QuestionnaireSummaryResponse): string {
+    return item.status === 'published' ? '已发布' : '草稿';
+  }
+
+  /** 公开填写地址只对已发布问卷有效。 */
+  protected fillLink(item: QuestionnaireSummaryResponse): string {
+    return `${window.location.origin}/t/${this.tenantSlug}/s/${item.id}`;
+  }
+
+  protected async copyFillLink(item: QuestionnaireSummaryResponse): Promise<void> {
+    const link = this.fillLink(item);
+    try {
+      await navigator.clipboard.writeText(link);
+      this.message.success('填写链接已复制');
+    } catch {
+      this.message.warning(`请手动复制填写链接：${link}`);
+    }
+  }
+
+  protected async remove(item: QuestionnaireSummaryResponse): Promise<void> {
+    if (this.deletingId()) {
+      return;
+    }
+
+    const title = this.titleOf(item);
+    if (!window.confirm(`确定删除问卷「${title}」？已发布版本与回答将一并删除，且不可恢复。`)) {
+      return;
+    }
+
+    this.deletingId.set(item.id);
+    try {
+      await this.questionnaires.remove(this.tenantSlug, item.id);
+      this.items.update((items) => items.filter((current) => current.id !== item.id));
+      this.message.success('问卷已删除');
+    } catch (error) {
+      this.message.error(describeApiError(error));
+    } finally {
+      this.deletingId.set(null);
+    }
   }
 
   protected onSlugChange(value: string | number): void {

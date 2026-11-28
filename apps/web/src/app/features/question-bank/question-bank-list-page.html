@@ -1,0 +1,74 @@
+<section class="page-head">
+  <div>
+    <h1>题库</h1>
+    <p class="hint">沉淀可复用的题目模板，支持 8 种题型；在问卷编辑器里统一维护内容。</p>
+  </div>
+  <div class="head-actions">
+    <t-button variant="outline" [loading]="loading()" (click)="load()">刷新</t-button>
+    <a class="primary-link" [routerLink]="['/t', tenantSlug, 'question-bank', 'new']">新建题目</a>
+  </div>
+</section>
+
+<section class="panel table-panel">
+  @if (loading()) {
+  <p class="placeholder">正在加载题库…</p>
+  } @else if (loadError(); as message) {
+  <p class="error" role="alert">{{ message }}</p>
+  } @else if (items().length === 0) {
+  <p class="placeholder">题库还是空的，点击右上角「新建题目」添加第一道题。</p>
+  } @else {
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>标题</th>
+        <th>题型</th>
+        <th>标签</th>
+        <th>更新时间</th>
+        <th class="actions-col">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of items(); track item.id) {
+      <tr>
+        <td>
+          <a class="item-title" [routerLink]="['/t', tenantSlug, 'question-bank', item.id]">
+            {{ titleOf(item) }}
+          </a>
+          @if (item.description; as description) {
+          <div class="item-slug">{{ textOf(description) }}</div>
+          }
+        </td>
+        <td>{{ typeLabel(item) }}</td>
+        <td>
+          <div class="tag-list">
+            @for (tag of item.tags; track tag) {
+            <t-tag size="small" variant="light">{{ tag }}</t-tag>
+            } @empty {
+            <span class="muted">—</span>
+            }
+          </div>
+        </td>
+        <td class="time">{{ updatedAtOf(item) }}</td>
+        <td>
+          <div class="row-actions">
+            <a class="text-action" [routerLink]="['/t', tenantSlug, 'question-bank', item.id]">
+              编辑
+            </a>
+            <t-button
+              variant="text"
+              theme="danger"
+              size="small"
+              [loading]="deletingId() === item.id"
+              [disabled]="deletingId() !== null"
+              (click)="remove(item)"
+            >
+              删除
+            </t-button>
+          </div>
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  }
+</section>
