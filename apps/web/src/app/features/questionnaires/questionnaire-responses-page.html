@@ -1,0 +1,65 @@
+<section class="page-head">
+  <div>
+    <a class="back" [routerLink]="['/t', tenantSlug, 'questionnaires']">← 返回问卷列表</a>
+    <div class="title-row">
+      <h1>{{ surveyTitle() || '未命名问卷' }}</h1>
+      <t-tag [theme]="status() === 'published' ? 'success' : 'default'" variant="light">
+        {{ status() === 'published' ? '已发布' : '草稿' }}
+      </t-tag>
+    </div>
+    <p class="hint">按提交时间倒序查看原始答卷；时间/IP 筛选与导出将在下一阶段补充。</p>
+  </div>
+</section>
+
+<app-questionnaire-tabs [tenantSlug]="tenantSlug" [questionnaireId]="questionnaireId" />
+
+<section class="panel">
+  <div class="table-head">
+    <h2>原始数据</h2>
+    <span class="count">共 {{ total() }} 条</span>
+  </div>
+
+  @if (loadError(); as message) {
+  <p class="error" role="alert">{{ message }}</p>
+  <t-button variant="outline" (click)="load()">重试</t-button>
+  } @else {
+  <t-table
+    [data]="tableData()"
+    [columns]="columns"
+    rowKey="id"
+    [loading]="loading()"
+    empty="暂无答卷数据"
+    [pagination]="pagination()"
+    (pageChange)="onPageChange($event)"
+  >
+    <ng-template tTableCell="index" let-rowIndex="rowIndex"> {{ indexOf(rowIndex) }} </ng-template>
+
+    <ng-template tTableCell="submittedAt" let-row="row">
+      {{ formatTime(row.submittedAt) }}
+    </ng-template>
+
+    <ng-template tTableCell="language" let-row="row">{{ row.language ?? '—' }}</ng-template>
+
+    <ng-template tTableCell="answerCount" let-row="row">{{ answerCount(row) }}</ng-template>
+
+    <ng-template tTableCell="actions" let-row="row">
+      <t-button variant="text" size="small" (click)="openAnswers(row)">查看答案</t-button>
+    </ng-template>
+  </t-table>
+  }
+</section>
+
+<t-dialog
+  header="答卷详情"
+  [visible]="selected() !== null"
+  confirmBtn="关闭"
+  (visibleChange)="closeAnswers($event)"
+  (confirm)="closeAnswers(false)"
+>
+  @if (selected(); as response) {
+  <p class="dialog-meta">
+    提交时间 {{ formatTime(response.submittedAt) }} · 版本 v{{ response.version }}
+  </p>
+  <pre class="answers-json">{{ answersJson() }}</pre>
+  }
+</t-dialog>

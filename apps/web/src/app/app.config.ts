@@ -1,6 +1,11 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter, withComponentInputBinding, withRouterConfig } from '@angular/router';
+import {
+  provideRouter,
+  withComponentInputBinding,
+  withHashLocation,
+  withRouterConfig,
+} from '@angular/router';
 import { provideTMessage } from '@tdesign-ng/components';
 
 import { API_BASE_URL } from './core/api/api-config';
@@ -13,6 +18,7 @@ export const appConfig: ApplicationConfig = {
     // 子路由需要读取父路由的 tenantSlug，统一开启参数继承。
     provideRouter(
       routes,
+      withHashLocation(),
       withComponentInputBinding(),
       withRouterConfig({ paramsInheritanceStrategy: 'always' }),
     ),

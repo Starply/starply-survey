@@ -38,6 +38,8 @@
   </div>
 </section>
 
+<app-questionnaire-tabs [tenantSlug]="tenantSlug" [questionnaireId]="questionnaireId" />
+
 @if (readOnly()) {
 <p class="banner" role="status">当前账号在该租户内为只读权限，无法保存或发布。</p>
 } @if (loading()) {

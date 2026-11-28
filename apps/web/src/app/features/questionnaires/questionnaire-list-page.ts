@@ -23,6 +23,7 @@ import {
 
 import { describeApiError } from '../../core/api/api-error';
 import { QuestionnaireService } from '../../core/questionnaire/questionnaire.service';
+import { publicSurveyUrl } from '../../shared/app-url';
 import { formatDateTime, textFor } from '../../shared/text';
 
 type StatusFilter = 'all' | QuestionnaireStatus;
@@ -48,6 +49,7 @@ export class QuestionnaireListPage {
   protected readonly loading = signal(true);
   protected readonly loadError = signal<string | null>(null);
   protected readonly deletingId = signal<string | null>(null);
+  protected readonly pendingDelete = signal<QuestionnaireSummaryResponse | null>(null);
 
   // 搜索条件：草稿值在点击「查询」后才生效，重置会同时清空输入。
   protected readonly keywordDraft = signal('');
@@ -65,22 +67,16 @@ export class QuestionnaireListPage {
 
   protected readonly columns: TableColumn[] = [
     { colKey: 'index', title: '序号', width: 72, align: 'center' },
-    { colKey: 'title', title: '问卷', minWidth: 280 },
-    { colKey: 'status', title: '状态', width: 110 },
+    { colKey: 'title', title: '问卷', minWidth: 300 },
+    { colKey: 'responses', title: '答卷数', width: 90, align: 'center' },
+    { colKey: 'status', title: '状态', width: 130 },
     {
-      colKey: 'version',
-      title: '版本',
-      width: 90,
-      align: 'center',
-      cell: ({ value }) => (value === null ? '—' : `v${value}`),
+      colKey: 'createdAt',
+      title: '创建时间',
+      width: 180,
+      cell: ({ row }) => formatDateTime(String(row['createdAt'])),
     },
-    {
-      colKey: 'updatedAt',
-      title: '更新时间',
-      width: 190,
-      cell: ({ row }) => formatDateTime(String(row['updatedAt'])),
-    },
-    { colKey: 'actions', title: '操作', width: 240, align: 'right' },
+    { colKey: 'actions', title: '操作', width: 220, align: 'right' },
   ];
 
   protected readonly filteredItems = computed(() => {
@@ -174,9 +170,13 @@ export class QuestionnaireListPage {
     return status === 'published' ? '已发布' : '草稿';
   }
 
-  /** 公开填写地址只对已发布问卷有效。 */
+  protected updatedAtText(item: QuestionnaireSummaryResponse): string {
+    return formatDateTime(item.updatedAt);
+  }
+
+  /** 公开填写地址只对已发布问卷有效；hash 路由下必须带 `#`。 */
   protected fillLink(item: QuestionnaireSummaryResponse): string {
-    return `${window.location.origin}/t/${this.tenantSlug}/s/${item.id}`;
+    return publicSurveyUrl(this.tenantSlug, item.id);
   }
 
   protected async copyFillLink(item: QuestionnaireSummaryResponse): Promise<void> {
@@ -189,13 +189,23 @@ export class QuestionnaireListPage {
     }
   }
 
-  protected async remove(item: QuestionnaireSummaryResponse): Promise<void> {
+  protected requestDelete(item: QuestionnaireSummaryResponse): void {
     if (this.deletingId()) {
       return;
     }
 
-    const title = this.titleOf(item);
-    if (!window.confirm(`确定删除问卷「${title}」？已发布版本与回答将一并删除，且不可恢复。`)) {
+    this.pendingDelete.set(item);
+  }
+
+  protected closeDeleteDialog(visible: boolean): void {
+    if (!visible && this.deletingId() === null) {
+      this.pendingDelete.set(null);
+    }
+  }
+
+  protected async confirmDelete(): Promise<void> {
+    const item = this.pendingDelete();
+    if (!item || this.deletingId()) {
       return;
     }
 
@@ -203,6 +213,7 @@ export class QuestionnaireListPage {
     try {
       await this.questionnaires.remove(this.tenantSlug, item.id);
       this.items.update((items) => items.filter((current) => current.id !== item.id));
+      this.pendingDelete.set(null);
       this.message.success('问卷已删除');
     } catch (error) {
       this.message.error(describeApiError(error));

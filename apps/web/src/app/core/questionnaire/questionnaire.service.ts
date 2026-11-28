@@ -4,7 +4,9 @@ import type {
   PublishQuestionnaireResponse,
   QuestionnaireDetailResponse,
   QuestionnaireListResponse,
+  QuestionnaireStatsResponse,
   SurveyContent,
+  SurveyResponseListResponse,
   UpdateQuestionnaireDraftRequest,
 } from '@starply/contracts';
 
@@ -25,6 +27,28 @@ export class QuestionnaireService {
   get(tenantSlug: string, questionnaireId: string): Promise<QuestionnaireDetailResponse> {
     return this.api.get<QuestionnaireDetailResponse>(
       `${this.base(tenantSlug)}/${encodeURIComponent(questionnaireId)}`,
+    );
+  }
+
+  stats(tenantSlug: string, questionnaireId: string): Promise<QuestionnaireStatsResponse> {
+    return this.api.get<QuestionnaireStatsResponse>(
+      `${this.base(tenantSlug)}/${encodeURIComponent(questionnaireId)}/stats`,
+    );
+  }
+
+  listResponses(
+    tenantSlug: string,
+    questionnaireId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<SurveyResponseListResponse> {
+    const query = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+    });
+
+    return this.api.get<SurveyResponseListResponse>(
+      `${this.base(tenantSlug)}/${encodeURIComponent(questionnaireId)}/responses?${query.toString()}`,
     );
   }
 

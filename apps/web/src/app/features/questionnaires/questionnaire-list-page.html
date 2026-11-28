@@ -51,13 +51,16 @@
       <a class="item-title" [routerLink]="['/t', tenantSlug, 'questionnaires', row.id]">
         {{ titleOf(row) }}
       </a>
-      <div class="item-slug">{{ row.slug }}</div>
+      <div class="item-slug">{{ row.slug }} · 更新于 {{ updatedAtText(row) }}</div>
     </ng-template>
 
-    <ng-template tTableCell="status" let-value>
-      <t-tag [theme]="value === 'published' ? 'success' : 'default'" variant="light">
-        {{ statusText(value) }}
+    <ng-template tTableCell="status" let-row="row">
+      <t-tag [theme]="row.status === 'published' ? 'success' : 'default'" variant="light">
+        {{ statusText(row.status) }}
       </t-tag>
+      @if (row.publishedVersion !== null) {
+      <span class="item-version">v{{ row.publishedVersion }}</span>
+      }
     </ng-template>
 
     <ng-template tTableCell="actions" let-row="row">
@@ -77,9 +80,8 @@
           variant="text"
           theme="danger"
           size="small"
-          [loading]="deletingId() === row.id"
           [disabled]="deletingId() !== null"
-          (click)="remove(row)"
+          (click)="requestDelete(row)"
         >
           删除
         </t-button>
@@ -135,5 +137,22 @@
 
   @if (formError(); as message) {
   <p class="error" role="alert">{{ message }}</p>
+  }
+</t-dialog>
+
+<t-dialog
+  header="删除问卷"
+  [visible]="pendingDelete() !== null"
+  [confirmLoading]="deletingId() !== null"
+  confirmBtn="确认删除"
+  [closeOnOverlayClick]="deletingId() === null"
+  [closeOnEscKeydown]="deletingId() === null"
+  (visibleChange)="closeDeleteDialog($event)"
+  (confirm)="confirmDelete()"
+>
+  @if (pendingDelete(); as item) {
+  <p class="confirm-text">
+    确定删除问卷「{{ titleOf(item) }}」？已发布版本与回答将一并删除，且不可恢复。
+  </p>
   }
 </t-dialog>

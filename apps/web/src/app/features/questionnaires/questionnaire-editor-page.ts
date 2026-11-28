@@ -14,6 +14,7 @@ import { TButton, TInput, TMessageService, TTag, TTextarea } from '@tdesign-ng/c
 
 import { describeApiError, normalizeApiError } from '../../core/api/api-error';
 import { QuestionnaireService } from '../../core/questionnaire/questionnaire.service';
+import { publicSurveyUrl } from '../../shared/app-url';
 import { formatDateTime, setText, textFor } from '../../shared/text';
 import {
   addChoiceOption,
@@ -31,6 +32,7 @@ import {
   setQuestionRequired,
   setQuestionTitle,
 } from './editor-state';
+import { QuestionnaireTabs } from './questionnaire-tabs';
 
 /**
  * 问卷编辑器。
@@ -39,7 +41,7 @@ import {
  */
 @Component({
   selector: 'app-questionnaire-editor-page',
-  imports: [RouterLink, TButton, TInput, TTag, TTextarea],
+  imports: [RouterLink, QuestionnaireTabs, TButton, TInput, TTag, TTextarea],
   templateUrl: './questionnaire-editor-page.html',
   styleUrl: './questionnaire-editor-page.less',
 })
@@ -199,7 +201,7 @@ export class QuestionnaireEditorPage {
 
   /** 公开填写地址：只有已发布版本可被访问，复制按钮在未发布时禁用。 */
   protected fillLink(): string {
-    return `${window.location.origin}/t/${this.tenantSlug}/s/${this.questionnaireId}`;
+    return publicSurveyUrl(this.tenantSlug, this.questionnaireId);
   }
 
   protected async copyFillLink(): Promise<void> {

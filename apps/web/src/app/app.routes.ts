@@ -7,7 +7,10 @@ import { PublicSurveyPage } from './features/public-survey/public-survey-page';
 import { QuestionBankEditorPage } from './features/question-bank/question-bank-editor-page';
 import { QuestionBankListPage } from './features/question-bank/question-bank-list-page';
 import { QuestionnaireEditorPage } from './features/questionnaires/questionnaire-editor-page';
+import { QuestionnaireCollectPage } from './features/questionnaires/questionnaire-collect-page';
 import { QuestionnaireListPage } from './features/questionnaires/questionnaire-list-page';
+import { QuestionnaireResponsesPage } from './features/questionnaires/questionnaire-responses-page';
+import { QuestionnaireStatsPage } from './features/questionnaires/questionnaire-stats-page';
 import { TenantShell } from './features/tenant/tenant-shell';
 
 /**
@@ -32,6 +35,18 @@ export const routes: Routes = [
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'questionnaires' },
           { path: 'questionnaires', component: QuestionnaireListPage },
+          {
+            path: 'questionnaires/:questionnaireId/stats',
+            component: QuestionnaireStatsPage,
+          },
+          {
+            path: 'questionnaires/:questionnaireId/collect',
+            component: QuestionnaireCollectPage,
+          },
+          {
+            path: 'questionnaires/:questionnaireId/responses',
+            component: QuestionnaireResponsesPage,
+          },
           {
             path: 'questionnaires/:questionnaireId',
             component: QuestionnaireEditorPage,

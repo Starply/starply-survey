@@ -1,0 +1,46 @@
+<section class="page-head">
+  <div>
+    <a class="back" [routerLink]="['/t', tenantSlug, 'questionnaires']">← 返回问卷列表</a>
+    <div class="title-row">
+      <h1>{{ surveyTitle() || '未命名问卷' }}</h1>
+      <t-tag [theme]="status() === 'published' ? 'success' : 'default'" variant="light">
+        {{ status() === 'published' ? '已发布' : '草稿' }}
+      </t-tag>
+    </div>
+    <p class="hint">把答卷地址或二维码发给填写者，收集到的数据可在「原始数据」查看。</p>
+  </div>
+</section>
+
+<app-questionnaire-tabs [tenantSlug]="tenantSlug" [questionnaireId]="questionnaireId" />
+
+@if (loading()) {
+<p class="placeholder">正在加载问卷…</p>
+} @else if (loadError(); as message) {
+<section class="panel">
+  <p class="error" role="alert">{{ message }}</p>
+  <t-button variant="outline" (click)="load()">重试</t-button>
+</section>
+} @else {
+<section class="panel">
+  <h2>答卷地址</h2>
+
+  @if (published()) {
+  <p class="hint">问卷已发布，可开始收集答卷；后续重新发布不会影响已收集的数据。</p>
+  <div class="link-row">
+    <code class="link-text">{{ fillLink() }}</code>
+    <t-button theme="primary" variant="outline" (click)="copyLink()">复制地址</t-button>
+    <a class="open-link" [href]="fillLink()" target="_blank" rel="noopener">打开问卷</a>
+  </div>
+
+  <div class="qr-block">
+    <t-qrcode [value]="fillLink()" [size]="180" />
+    <p class="hint">手机扫码即可填写；二维码由前端 TQRCode 组件生成。</p>
+  </div>
+  } @else {
+  <p class="warning">问卷尚未发布，发布后才能收集答卷。</p>
+  <a class="text-action" [routerLink]="['/t', tenantSlug, 'questionnaires', questionnaireId]">
+    去发布 →
+  </a>
+  }
+</section>
+}
