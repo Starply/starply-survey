@@ -35,9 +35,9 @@ catalog:
   '@node-rs/argon2': 2.2.2
   ioredis: 6.1.0
   # UI
-  '@tdesign-ng/components': 0.1.0
-  '@tdesign-ng/icons': 0.1.0
-  '@tdesign-ng/styles': 0.1.0
+  '@tdesign-ng/components': 0.1.1
+  '@tdesign-ng/icons': 0.1.1
+  '@tdesign-ng/styles': 0.1.1
   # Tooling
   '@eslint/js': 10.0.1
   '@types/express': 5.0.6
@@ -56,9 +56,9 @@ catalog:
   vitest: ^5.0.0
 
 minimumReleaseAgeExclude:
-  - '@tdesign-ng/components@0.1.0'
-  - '@tdesign-ng/icons@0.1.0'
-  - '@tdesign-ng/styles@0.1.0'
+  - '@tdesign-ng/components@0.1.1'
+  - '@tdesign-ng/icons@0.1.1'
+  - '@tdesign-ng/styles@0.1.1'
   - '@typescript-eslint/eslint-plugin@8.74.0'
   - '@typescript-eslint/parser@8.74.0'
   - '@typescript-eslint/project-service@8.74.0'

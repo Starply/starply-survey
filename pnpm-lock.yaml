@@ -228,14 +228,14 @@ catalogs:
       specifier: 2.2.2
       version: 2.2.2
     '@tdesign-ng/components':
-      specifier: 0.1.0
-      version: 0.1.0
+      specifier: 0.1.1
+      version: 0.1.1
     '@tdesign-ng/icons':
-      specifier: 0.1.0
-      version: 0.1.0
+      specifier: 0.1.1
+      version: 0.1.1
     '@tdesign-ng/styles':
-      specifier: 0.1.0
-      version: 0.1.0
+      specifier: 0.1.1
+      version: 0.1.1
     '@types/express':
       specifier: 5.0.6
       version: 5.0.6
@@ -409,13 +409,13 @@ importers:
         version: link:../../packages/tenancy-core
       '@tdesign-ng/components':
         specifier: 'catalog:'
-        version: 0.1.0(b9968a68a006480fc04feac01284dbf5)
+        version: 0.1.1(6bf0b9fe7c36f9f9133eae5c72f5c5a7)
       '@tdesign-ng/icons':
         specifier: 'catalog:'
-        version: 0.1.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))
+        version: 0.1.1(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))
       '@tdesign-ng/styles':
         specifier: 'catalog:'
-        version: 0.1.0
+        version: 0.1.1
       rxjs:
         specifier: 'catalog:'
         version: 7.8.2
@@ -2033,8 +2033,8 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
-  '@tdesign-ng/components@0.1.0':
-    resolution: {integrity: sha512-HjBV5NLOEy/oK1ZnBU+pFg5eCPJZht2PONGKlwzYbxbdwESpc4rDsNbQqK8MQMdWBE3MglhUkjg2DJCMCG9OzQ==}
+  '@tdesign-ng/components@0.1.1':
+    resolution: {integrity: sha512-Dqp6Iv6UGyND0GQyugagLlbfXry+zBijBAFcUGnK8Gg8d3HcwKMJbLAeRfunLr0EqqeCnlUCc+SyuxHuXIluLw==}
     peerDependencies:
       '@angular/cdk': '>=19.0.0 <24.0.0'
       '@angular/common': '>=19.0.0 <24.0.0'
@@ -2042,13 +2042,13 @@ packages:
       '@angular/forms': '>=19.0.0 <24.0.0'
       '@tdesign-ng/styles': ^0.1.0
 
-  '@tdesign-ng/icons@0.1.0':
-    resolution: {integrity: sha512-LnfNzhFBAurHKMF5mQsgNtnPwhtD2fcjjodcYV6QHPTznyQxWZ2el8lwvMJpsGghd+f+KDSfgNXD9QK4arKBGg==}
+  '@tdesign-ng/icons@0.1.1':
+    resolution: {integrity: sha512-FPTwIJlyToRjk3o/l3A9GX3uCjNphDTwewXFbrlN7DprMSZcUzhxbRqT5bjkOMwS7y5vw3l4wgtgDptKiw3fDQ==}
     peerDependencies:
       '@angular/core': '>=19.0.0 <24.0.0'
 
-  '@tdesign-ng/styles@0.1.0':
-    resolution: {integrity: sha512-81umqXO9JXSXGK4Brv/d6I7rMtwQryyiL1mmZFnwajGwB7LwHl/jJvnyZAYFJn6yOup95wqdtjoQU7MKh+AfEg==}
+  '@tdesign-ng/styles@0.1.1':
+    resolution: {integrity: sha512-0CqZe+65lDLgXVw0C/67I1t+J/FfyNi909K/f0Qf01g2B2D6UaDNs45jewKp2NA/1VNuqxbL3yHBo9LzOzADeQ==}
 
   '@tokenizer/inflate@0.6.1':
     resolution: {integrity: sha512-EuqSyHdOXN61cc5/rsW6uUn1TJZJGZr56jlkUbsLwVJ6uHgvwQyFkYfOCf+zzPFAYjftPk1WeJnEhpLVvzbm1A==}
@@ -5345,22 +5345,22 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@tdesign-ng/components@0.1.0(b9968a68a006480fc04feac01284dbf5)':
+  '@tdesign-ng/components@0.1.1(6bf0b9fe7c36f9f9133eae5c72f5c5a7)':
     dependencies:
       '@angular/cdk': 22.3.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(@angular/forms@22.3.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(@angular/platform-browser@22.3.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2)))(rxjs@7.8.2))(@angular/platform-browser@22.3.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@angular/common': 22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/core': 22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2)
       '@angular/forms': 22.3.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(@angular/platform-browser@22.3.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2)))(rxjs@7.8.2)
-      '@tdesign-ng/styles': 0.1.0
+      '@tdesign-ng/styles': 0.1.1
       qrcode: 1.5.4
       tslib: 2.9.1
 
-  '@tdesign-ng/icons@0.1.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))':
+  '@tdesign-ng/icons@0.1.1(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))':
     dependencies:
       '@angular/core': 22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2)
       tslib: 2.9.1
 
-  '@tdesign-ng/styles@0.1.0': {}
+  '@tdesign-ng/styles@0.1.1': {}
 
   '@tokenizer/inflate@0.6.1(supports-color@8.1.1)':
     dependencies:
