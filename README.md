@@ -217,6 +217,7 @@ Web 管理端采用常规中后台布局：顶部菜单（问卷管理 / 题库�
 ## 尚未解决的点
 
 > 用户管理、租户管理与个人中心的设计与实施计划见 [docs/admin-console-design-plan.md](docs/admin-console-design-plan.md)（本轮只设计，不实现）。
+> 问卷列表、设计、统计、答卷收集与原始数据的页面设计见 [docs/survey-console-design-plan.md](docs/survey-console-design-plan.md)。
 > tdesign-ng 实际可用组件、页面映射与待补能力见 [docs/tdesign-ng-component-priority.md](docs/tdesign-ng-component-priority.md)。
 
 1. Redis 与 BullMQ：ioredis 已用于会话存储并完成登录冒烟；BullMQ 与缓存/队列分实例尚未接入。

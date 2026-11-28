@@ -41,6 +41,9 @@
 | 问卷编辑器 | Button、Input、Textarea、Tag、Message | Tabs（大纲/设置）、InputNumber（评分）、Upload（上传题）、DatePicker（日期题）、Tree/List（题目大纲）、Drawer（移动端设置） |
 | 题库编辑页 | Button、Input、Textarea、Message | InputNumber、TagInput、Tabs |
 | 登录 / 公开填写 | Input、Button、Message | Form 校验、Radio / Checkbox 题型组件（当前公开页为原生控件） |
+| 数据统计 | — | Tabs、Statistic、Empty、图表库（待选型） |
+| 答卷收集 | — | Tabs、QRCode、Button、Message（复制链接/打开问卷） |
+| 原始数据 | — | Table、DateRangePicker、Input、Checkbox、Popconfirm、导出按钮 |
 
 ## 4. 发现的问题与优先清单
 
@@ -70,15 +73,18 @@
 8. **TTabs**：编辑器「大纲 / 题库 / 问卷设置 / 题目设置」需要页签容器；组件入口已存在，尚未在页面验证。
 9. **TAvatar / TBadge**：顶部账号区、成员列表。
 10. **TTable 行选择列**：成员批量操作、题库批量删除；类型定义已有 `single/multiple`，尚未验证完整样式。
+11. **TQRCode**：答卷收集页的问卷二维码、下载。
+12. **TStatistic / TEmpty**：数据统计页的收集数/状态概览与图表空状态。
+13. **TDateRangePicker**：原始数据的按时间筛选。
 
 ### P2：问卷编辑器对齐参考项目需要
 
-11. **TUpload**：上传题。
-12. **TDatePicker**：日期题与问卷时间筛选。
-13. **TTree / TList + 拖拽排序**：题目大纲和题型面板排序。
-14. **TDrawer**：窄屏下的题目设置面板。
-15. **TTagInput**：题库标签输入（当前是逗号分隔文本）。
-16. **TTransfer / TCheckbox / TRadio**：复杂题型配置与公开填写页。
+14. **TUpload**：上传题。
+15. **TDatePicker**：日期题与问卷时间筛选。
+16. **TTree / TList + 拖拽排序**：题目大纲和题型面板排序。
+17. **TDrawer**：窄屏下的题目设置面板。
+18. **TTagInput**：题库标签输入（当前是逗号分隔文本）。
+19. **TTransfer / TCheckbox / TRadio**：复杂题型配置与公开填写页。
 
 ## 5. 当前实现取舍
 
