@@ -116,6 +116,8 @@ export interface QuestionnaireSummaryResponse {
   /** 从未发布时为 null。 */
   publishedVersion: number | null;
   publishedAt: string | null;
+  /** 已收集的有效答卷数。 */
+  responseCount: number;
 }
 
 /** 租户级问卷列表；当前为全量返回，分页留待列表规模增长后再加。 */
@@ -124,6 +126,36 @@ export interface QuestionnaireListResponse {
 }
 
 export type PublishQuestionnaireResponse = PublishedVersionSummary;
+
+// ---------------------------------------------------------------------------
+// 问卷统计与原始数据
+// ---------------------------------------------------------------------------
+
+/** 问卷统计概览：当前只提供总量与发布信息，按题统计后续再扩展。 */
+export interface QuestionnaireStatsResponse {
+  questionnaireId: string;
+  responseCount: number;
+  publishedVersion: number | null;
+  lastPublishedAt: string | null;
+}
+
+/** 管理端查看的单条答卷，answers 保持 survey_response 中的原始结构。 */
+export interface SurveyResponseSummary {
+  id: string;
+  /** 作答时对应的已发布版本号。 */
+  version: number;
+  language: LanguageTag | null;
+  submittedAt: string;
+  answers: SurveyAnswers;
+}
+
+/** 原始数据分页列表。 */
+export interface SurveyResponseListResponse {
+  items: SurveyResponseSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
 
 // ---------------------------------------------------------------------------
 // 公开填写接口（无需登录）

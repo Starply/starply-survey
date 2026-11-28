@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,8 @@ import type {
   PublishQuestionnaireResponse,
   QuestionnaireDetailResponse,
   QuestionnaireListResponse,
+  QuestionnaireStatsResponse,
+  SurveyResponseListResponse,
 } from '@starply/contracts';
 
 import { AccessTokenGuard } from '../auth/access-token.guard';
@@ -46,6 +49,27 @@ export class QuestionnaireController {
   @RequireTenantPermission('survey:read')
   list(@Req() request: TenantRequest): Promise<QuestionnaireListResponse> {
     return this.questionnaires.list(request.tenant!.id);
+  }
+
+  @Get(':questionnaireId/stats')
+  @RequireTenantPermission('survey:read')
+  stats(
+    @Param('questionnaireId') questionnaireId: string,
+    @Req() request: TenantRequest,
+  ): Promise<QuestionnaireStatsResponse> {
+    return this.questionnaires.stats(request.tenant!.id, questionnaireId);
+  }
+
+  /** 原始答卷分页；page/pageSize 由服务层收敛，默认 20 条。 */
+  @Get(':questionnaireId/responses')
+  @RequireTenantPermission('survey:read')
+  listResponses(
+    @Param('questionnaireId') questionnaireId: string,
+    @Query('page') page: string | undefined,
+    @Query('pageSize') pageSize: string | undefined,
+    @Req() request: TenantRequest,
+  ): Promise<SurveyResponseListResponse> {
+    return this.questionnaires.listResponses(request.tenant!.id, questionnaireId, page, pageSize);
   }
 
   @Get(':questionnaireId')

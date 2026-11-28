@@ -10,6 +10,8 @@ import {
   type PublishedVersionState,
   type QuestionnaireDetail,
   type QuestionnaireSummary,
+  type SurveyResponsePage,
+  type SurveyResponseState,
 } from './questionnaire.repository';
 import { QuestionnaireService } from './questionnaire.service';
 
@@ -33,6 +35,8 @@ const validContent = (title = '客户满意度调查'): SurveyContent => ({
 class InMemoryQuestionnaireRepository extends QuestionnaireRepository {
   readonly details = new Map<string, QuestionnaireDetail>();
   readonly publishedHistory: PublishedVersionState[] = [];
+  /** 测试用答卷；键为问卷 id。 */
+  readonly responses = new Map<string, SurveyResponseState[]>();
   /** 单调递增的时钟，保证列表排序断言不受同毫秒写入影响。 */
   private clock = 0;
 
@@ -75,6 +79,7 @@ class InMemoryQuestionnaireRepository extends QuestionnaireRepository {
         updatedAt: detail.draft.updatedAt,
         publishedVersion: detail.published?.version ?? null,
         publishedAt: detail.published?.publishedAt ?? null,
+        responseCount: (this.responses.get(detail.id) ?? []).length,
       }))
       .sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime());
   }
@@ -146,7 +151,32 @@ class InMemoryQuestionnaireRepository extends QuestionnaireRepository {
     }
 
     this.details.delete(questionnaireId);
+    this.responses.delete(questionnaireId);
     return true;
+  }
+
+  async countResponses(tenantId: string, questionnaireId: string): Promise<number> {
+    const detail = await this.findDetail(tenantId, questionnaireId);
+    if (!detail) {
+      return 0;
+    }
+
+    return (this.responses.get(questionnaireId) ?? []).length;
+  }
+
+  async listResponses(
+    tenantId: string,
+    questionnaireId: string,
+    offset: number,
+    limit: number,
+  ): Promise<SurveyResponsePage> {
+    const detail = await this.findDetail(tenantId, questionnaireId);
+    if (!detail) {
+      return { items: [], total: 0 };
+    }
+
+    const all = this.responses.get(questionnaireId) ?? [];
+    return { items: all.slice(offset, offset + limit), total: all.length };
   }
 
   private findBySlug(tenantId: string, slug: string): QuestionnaireDetail | null {
@@ -310,6 +340,79 @@ describe('QuestionnaireService.list', () => {
     expect(list.items).toHaveLength(1);
     expect(list.items[0]).toMatchObject({ status: 'published', publishedVersion: 1 });
     expect(typeof list.items[0]?.publishedAt).toBe('string');
+  });
+});
+
+describe('QuestionnaireService.stats / listResponses', () => {
+  it('统计返回答卷数与发布版本', async () => {
+    const { service, repository } = createService();
+    const created = await service.create('tenant-1', 'user-1', createRequest());
+    await service.updateDraft('tenant-1', created.id, { content: validContent() });
+    await service.publish('tenant-1', created.id);
+    repository.responses.set(created.id, [
+      {
+        id: 'response-1',
+        version: 1,
+        language: 'zh-CN',
+        submittedAt: now,
+        answers: { q1: '张三' },
+      },
+      {
+        id: 'response-2',
+        version: 1,
+        language: 'zh-CN',
+        submittedAt: now,
+        answers: { q1: '李四' },
+      },
+    ]);
+
+    const stats = await service.stats('tenant-1', created.id);
+
+    expect(stats).toMatchObject({
+      questionnaireId: created.id,
+      responseCount: 2,
+      publishedVersion: 1,
+    });
+    expect(typeof stats.lastPublishedAt).toBe('string');
+  });
+
+  it('统计不存在的问卷返回 404', async () => {
+    const { service } = createService();
+
+    const error = await capture<NotFoundException>(() => service.stats('tenant-1', 'missing'));
+
+    expect(error.getResponse()).toMatchObject({ code: 'questionnaire_not_found' });
+  });
+
+  it('原始数据按页返回并收敛 pageSize', async () => {
+    const { service, repository } = createService();
+    const created = await service.create('tenant-1', 'user-1', createRequest());
+    repository.responses.set(
+      created.id,
+      ['张三', '李四', '王五'].map((name, index) => ({
+        id: `response-${index + 1}`,
+        version: 1,
+        language: 'zh-CN',
+        submittedAt: now,
+        answers: { q1: name },
+      })),
+    );
+
+    const result = await service.listResponses('tenant-1', created.id, '2', '1');
+
+    expect(result).toMatchObject({ page: 2, pageSize: 1, total: 3 });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({ id: 'response-2', answers: { q1: '李四' } });
+  });
+
+  it('原始数据问卷不存在返回 404', async () => {
+    const { service } = createService();
+
+    const error = await capture<NotFoundException>(() =>
+      service.listResponses('tenant-1', 'missing'),
+    );
+
+    expect(error.getResponse()).toMatchObject({ code: 'questionnaire_not_found' });
   });
 });
 

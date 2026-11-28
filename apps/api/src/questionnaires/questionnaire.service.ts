@@ -10,7 +10,10 @@ import type {
   PublishQuestionnaireResponse,
   QuestionnaireDetailResponse,
   QuestionnaireListResponse,
+  QuestionnaireStatsResponse,
   QuestionnaireSummaryResponse,
+  SurveyResponseListResponse,
+  SurveyResponseSummary,
   UpdateQuestionnaireDraftRequest,
 } from '@starply/contracts';
 import {
@@ -112,6 +115,50 @@ export class QuestionnaireService {
     }
 
     return toDetailResponse(detail);
+  }
+
+  /** 统计概览：先校验问卷归属，再读取答卷总数。 */
+  async stats(tenantId: string, questionnaireId: string): Promise<QuestionnaireStatsResponse> {
+    const detail = await this.repository.findDetail(tenantId, questionnaireId);
+    if (!detail) {
+      throw questionnaireNotFound();
+    }
+
+    return {
+      questionnaireId: detail.id,
+      responseCount: await this.repository.countResponses(tenantId, questionnaireId),
+      publishedVersion: detail.published?.version ?? null,
+      lastPublishedAt: detail.published?.publishedAt.toISOString() ?? null,
+    };
+  }
+
+  /** 原始数据分页列表；页码与页大小做服务端收敛，避免异常值打满数据库。 */
+  async listResponses(
+    tenantId: string,
+    questionnaireId: string,
+    pageInput?: string,
+    pageSizeInput?: string,
+  ): Promise<SurveyResponseListResponse> {
+    const detail = await this.repository.findDetail(tenantId, questionnaireId);
+    if (!detail) {
+      throw questionnaireNotFound();
+    }
+
+    const page = readPositiveInt(pageInput, 1, 10_000);
+    const pageSize = readPositiveInt(pageSizeInput, 20, 100);
+    const { items, total } = await this.repository.listResponses(
+      tenantId,
+      questionnaireId,
+      (page - 1) * pageSize,
+      pageSize,
+    );
+
+    return {
+      items: items.map(toResponseSummary),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async updateDraft(
@@ -243,7 +290,33 @@ function toSummaryResponse(summary: QuestionnaireSummary): QuestionnaireSummaryR
     updatedAt: summary.updatedAt.toISOString(),
     publishedVersion: summary.publishedVersion,
     publishedAt: summary.publishedAt ? summary.publishedAt.toISOString() : null,
+    responseCount: summary.responseCount,
   };
+}
+
+function toResponseSummary(response: {
+  id: string;
+  version: number;
+  language: string | null;
+  submittedAt: Date;
+  answers: SurveyResponseSummary['answers'];
+}): SurveyResponseSummary {
+  return {
+    id: response.id,
+    version: response.version,
+    language: response.language as SurveyResponseSummary['language'],
+    submittedAt: response.submittedAt.toISOString(),
+    answers: response.answers,
+  };
+}
+
+function readPositiveInt(value: string | undefined, fallback: number, max: number): number {
+  const parsed = value === undefined ? Number.NaN : Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return fallback;
+  }
+
+  return Math.min(parsed, max);
 }
 
 function toDetailResponse(detail: QuestionnaireDetail): QuestionnaireDetailResponse {

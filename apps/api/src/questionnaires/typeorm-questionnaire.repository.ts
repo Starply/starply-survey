@@ -3,7 +3,7 @@ import { QUESTIONNAIRE_SCHEMA_VERSION, type SurveyContent } from '@starply/quest
 import { In, type DataSource, type EntityManager } from 'typeorm';
 
 import { DatabaseService } from '../database/database.service';
-import { Questionnaire, QuestionnaireVersion } from '../database/entities';
+import { Questionnaire, QuestionnaireVersion, SurveyResponse } from '../database/entities';
 import {
   QuestionnaireRepository,
   type CreateQuestionnaireInput,
@@ -12,6 +12,7 @@ import {
   type QuestionnaireDetail,
   type QuestionnaireSummary,
   type PublishedVersionState,
+  type SurveyResponsePage,
 } from './questionnaire.repository';
 
 /**
@@ -106,6 +107,18 @@ export class TypeormQuestionnaireRepository extends QuestionnaireRepository {
       .find({ where: { id: In(versionIds) } });
     const versionById = new Map(versions.map((version) => [version.id, version]));
 
+    const responseRows = await this.dataSource
+      .getRepository(SurveyResponse)
+      .createQueryBuilder('response')
+      .select('response.questionnaireId', 'questionnaireId')
+      .addSelect('COUNT(*)', 'count')
+      .where('response.tenantId = :tenantId', { tenantId })
+      .groupBy('response.questionnaireId')
+      .getRawMany<{ questionnaireId: string; count: string }>();
+    const responseCountBy = new Map(
+      responseRows.map((row) => [row.questionnaireId, Number(row.count)]),
+    );
+
     const summaries: QuestionnaireSummary[] = [];
     for (const questionnaire of questionnaires) {
       const draft = questionnaire.draftVersionId
@@ -130,6 +143,7 @@ export class TypeormQuestionnaireRepository extends QuestionnaireRepository {
         updatedAt: draft.updatedAt,
         publishedVersion: published?.version ?? null,
         publishedAt: published?.publishedAt ?? null,
+        responseCount: responseCountBy.get(questionnaire.id) ?? 0,
       });
     }
 
@@ -249,6 +263,37 @@ export class TypeormQuestionnaireRepository extends QuestionnaireRepository {
       .delete({ id: questionnaireId, tenantId });
 
     return (result.affected ?? 0) > 0;
+  }
+
+  async countResponses(tenantId: string, questionnaireId: string): Promise<number> {
+    return this.dataSource
+      .getRepository(SurveyResponse)
+      .count({ where: { tenantId, questionnaireId } });
+  }
+
+  async listResponses(
+    tenantId: string,
+    questionnaireId: string,
+    offset: number,
+    limit: number,
+  ): Promise<SurveyResponsePage> {
+    const [rows, total] = await this.dataSource.getRepository(SurveyResponse).findAndCount({
+      where: { tenantId, questionnaireId },
+      order: { createdAt: 'DESC' },
+      skip: offset,
+      take: limit,
+    });
+
+    return {
+      items: rows.map((row) => ({
+        id: row.id,
+        version: row.version,
+        language: row.language,
+        submittedAt: row.createdAt,
+        answers: row.answers,
+      })),
+      total,
+    };
   }
 
   /** 锁住问卷行，串行化同一问卷的发布；锁必须处于事务中。 */

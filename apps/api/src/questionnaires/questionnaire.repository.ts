@@ -4,6 +4,7 @@ import type {
   LocalizedText,
   PublishedSurveyVersion,
   ReadonlySurveyContent,
+  SurveyAnswers,
   SurveyContent,
 } from '@starply/questionnaire-core';
 
@@ -45,6 +46,22 @@ export interface QuestionnaireSummary {
   updatedAt: Date;
   publishedVersion: number | null;
   publishedAt: Date | null;
+  /** 已收集的答卷数。 */
+  responseCount: number;
+}
+
+/** 管理端答卷条目；只读展示，不参与问卷编辑。 */
+export interface SurveyResponseState {
+  id: string;
+  version: number;
+  language: string | null;
+  submittedAt: Date;
+  answers: SurveyAnswers;
+}
+
+export interface SurveyResponsePage {
+  items: SurveyResponseState[];
+  total: number;
 }
 
 export interface CreateQuestionnaireInput {
@@ -104,4 +121,15 @@ export abstract class QuestionnaireRepository {
 
   /** 删除问卷主体；版本与回答由外键级联删除。不存在或不属于该租户时返回 false。 */
   abstract delete(tenantId: string, questionnaireId: string): Promise<boolean>;
+
+  /** 统计某问卷的答卷数；问卷归属由服务层先校验。 */
+  abstract countResponses(tenantId: string, questionnaireId: string): Promise<number>;
+
+  /** 按提交时间倒序分页读取答卷。 */
+  abstract listResponses(
+    tenantId: string,
+    questionnaireId: string,
+    offset: number,
+    limit: number,
+  ): Promise<SurveyResponsePage>;
 }
