@@ -1,19 +1,103 @@
 <section class="page-head">
   <div>
-    <h1>问卷管理</h1>
-    <p class="hint">草稿可随时修改，发布后生成不可变版本；删除问卷会同时移除历史版本与回答。</p>
+    <h1>我的问卷</h1>
+    <p class="hint">搜索、筛选并管理当前租户下的问卷；发布后会生成不可变版本。</p>
   </div>
-  <div class="head-actions">
-    <t-button variant="outline" [loading]="loading()" (click)="load()">刷新</t-button>
-    <t-button theme="primary" (click)="toggleCreate()">
-      {{ showCreate() ? '收起新建' : '新建问卷' }}
-    </t-button>
+  <t-button theme="primary" (click)="openCreate()">新建问卷</t-button>
+</section>
+
+<section class="panel filter-card">
+  <div class="filter-bar">
+    <t-input
+      class="filter-keyword"
+      [value]="keywordDraft()"
+      (valueChange)="onKeywordDraftChange($event)"
+      placeholder="请输入查询的问卷标题"
+    />
+    <t-select
+      class="filter-status"
+      [value]="statusDraft()"
+      [options]="statusOptions"
+      (valueChange)="onStatusDraftChange($event)"
+    />
+    <t-button theme="primary" (click)="applyFilters()">查询</t-button>
+    <t-button variant="outline" (click)="resetFilters()">重置</t-button>
+    <t-button variant="text" [loading]="loading()" (click)="load()">刷新</t-button>
   </div>
 </section>
 
-@if (showCreate()) {
-<section class="panel create-panel">
-  <h2>新建问卷</h2>
+@if (loadError(); as message) {
+<p class="error" role="alert">{{ message }}</p>
+}
+
+<section class="panel table-card">
+  <div class="table-head">
+    <h2>全部问卷</h2>
+    <span class="count">共 {{ filteredItems().length }} 份</span>
+  </div>
+
+  <t-table
+    [data]="tableData()"
+    [columns]="columns"
+    rowKey="id"
+    [loading]="loading()"
+    empty="暂无问卷，点击右上角「新建问卷」开始"
+    [pagination]="pagination()"
+    (pageChange)="onPageChange($event)"
+  >
+    <ng-template tTableCell="index" let-rowIndex="rowIndex">{{ rowIndex + 1 }}</ng-template>
+
+    <ng-template tTableCell="title" let-row="row">
+      <a class="item-title" [routerLink]="['/t', tenantSlug, 'questionnaires', row.id]">
+        {{ titleOf(row) }}
+      </a>
+      <div class="item-slug">{{ row.slug }}</div>
+    </ng-template>
+
+    <ng-template tTableCell="status" let-value>
+      <t-tag [theme]="value === 'published' ? 'success' : 'default'" variant="light">
+        {{ statusText(value) }}
+      </t-tag>
+    </ng-template>
+
+    <ng-template tTableCell="actions" let-row="row">
+      <div class="row-actions">
+        <a class="text-action" [routerLink]="['/t', tenantSlug, 'questionnaires', row.id]">
+          编辑
+        </a>
+        <t-button
+          variant="text"
+          size="small"
+          [disabled]="row.status !== 'published'"
+          (click)="copyFillLink(row)"
+        >
+          复制链接
+        </t-button>
+        <t-button
+          variant="text"
+          theme="danger"
+          size="small"
+          [loading]="deletingId() === row.id"
+          [disabled]="deletingId() !== null"
+          (click)="remove(row)"
+        >
+          删除
+        </t-button>
+      </div>
+    </ng-template>
+  </t-table>
+</section>
+
+<t-dialog
+  header="新建问卷"
+  [visible]="showCreate()"
+  [confirmLoading]="creating()"
+  confirmBtn="创建并编辑"
+  [closeOnOverlayClick]="false"
+  [closeOnEscKeydown]="!creating()"
+  (visibleChange)="onCreateVisibleChange($event)"
+  (confirm)="create()"
+>
   <div class="form-grid">
     <label class="field">
       <span class="field-label">问卷标识</span>
@@ -52,80 +136,4 @@
   @if (formError(); as message) {
   <p class="error" role="alert">{{ message }}</p>
   }
-
-  <div class="form-actions">
-    <t-button theme="primary" [loading]="creating()" [disabled]="creating()" (click)="create()">
-      创建并编辑
-    </t-button>
-    <t-button variant="outline" [disabled]="creating()" (click)="toggleCreate()">取消</t-button>
-  </div>
-</section>
-}
-
-<section class="panel table-panel">
-  @if (loading()) {
-  <p class="placeholder">正在加载问卷列表…</p>
-  } @else if (loadError(); as message) {
-  <p class="error" role="alert">{{ message }}</p>
-  } @else if (items().length === 0) {
-  <p class="placeholder">还没有问卷，点击右上角「新建问卷」开始。</p>
-  } @else {
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>标题</th>
-        <th>状态</th>
-        <th>版本</th>
-        <th>更新时间</th>
-        <th class="actions-col">操作</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (item of items(); track item.id) {
-      <tr>
-        <td>
-          <a class="item-title" [routerLink]="['/t', tenantSlug, 'questionnaires', item.id]">
-            {{ titleOf(item) }}
-          </a>
-          <div class="item-slug">{{ item.slug }}</div>
-        </td>
-        <td>
-          <t-tag [theme]="item.status === 'published' ? 'success' : 'default'" variant="light">
-            {{ statusLabel(item) }}
-          </t-tag>
-        </td>
-        <td class="numeric">
-          {{ item.publishedVersion !== null ? 'v' + item.publishedVersion : '—' }}
-        </td>
-        <td class="time">{{ updatedAtOf(item) }}</td>
-        <td>
-          <div class="row-actions">
-            <a class="text-action" [routerLink]="['/t', tenantSlug, 'questionnaires', item.id]">
-              编辑
-            </a>
-            <t-button
-              variant="text"
-              size="small"
-              [disabled]="item.status !== 'published'"
-              (click)="copyFillLink(item)"
-            >
-              复制链接
-            </t-button>
-            <t-button
-              variant="text"
-              theme="danger"
-              size="small"
-              [loading]="deletingId() === item.id"
-              [disabled]="deletingId() !== null"
-              (click)="remove(item)"
-            >
-              删除
-            </t-button>
-          </div>
-        </td>
-      </tr>
-      }
-    </tbody>
-  </table>
-  }
-</section>
+</t-dialog>
