@@ -216,6 +216,8 @@ Web 管理端采用常规中后台布局：顶部菜单（问卷管理 / 题库�
 
 ## 尚未解决的点
 
+> 用户管理、租户管理与个人中心的设计与实施计划见 [docs/admin-console-design-plan.md](docs/admin-console-design-plan.md)（本轮只设计，不实现）。
+
 1. Redis 与 BullMQ：ioredis 已用于会话存储并完成登录冒烟；BullMQ 与缓存/队列分实例尚未接入。
 2. 仍缺：注册与邀请激活、登录限流、问卷条件逻辑（visibleWhen/jumpRules）执行、回答统计与导出、公开填写限流与防刷。
 3. SSR/预渲染在组件库场景下未验证；当前默认 SPA。
