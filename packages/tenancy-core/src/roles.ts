@@ -20,6 +20,8 @@ export const TENANT_PERMISSIONS = [
   'survey:update',
   'survey:delete',
   'survey:publish',
+  'question_bank:read',
+  'question_bank:manage',
   'response:read',
   'response:export',
   'audit:read',
@@ -31,7 +33,7 @@ export type TenantPermission = (typeof TENANT_PERMISSIONS)[number];
  * 角色授权表：
  * - owner 是租户创建者/最高权限，独占 tenant:update；
  * - admin 管理成员、问卷与答卷，但不能修改租户本身；
- * - editor 负责问卷内容与发布，可导出答卷；
+ * - editor 负责问卷内容与发布，可维护题库并导出答卷；
  * - viewer 只读。
  */
 export const ROLE_PERMISSIONS: Readonly<Record<TenantRole, readonly TenantPermission[]>> = {
@@ -47,6 +49,8 @@ export const ROLE_PERMISSIONS: Readonly<Record<TenantRole, readonly TenantPermis
     'survey:update',
     'survey:delete',
     'survey:publish',
+    'question_bank:read',
+    'question_bank:manage',
     'response:read',
     'response:export',
     'audit:read',
@@ -58,10 +62,12 @@ export const ROLE_PERMISSIONS: Readonly<Record<TenantRole, readonly TenantPermis
     'survey:create',
     'survey:update',
     'survey:publish',
+    'question_bank:read',
+    'question_bank:manage',
     'response:read',
     'response:export',
   ],
-  viewer: ['tenant:read', 'member:read', 'survey:read', 'response:read'],
+  viewer: ['tenant:read', 'member:read', 'survey:read', 'question_bank:read', 'response:read'],
 };
 
 export function isTenantRole(value: unknown): value is TenantRole {

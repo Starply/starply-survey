@@ -45,10 +45,11 @@ describe('权限矩阵', () => {
     expect(hasTenantPermission('viewer', 'tenant:update')).toBe(false);
   });
 
-  it('admin 可以管理成员与删除问卷', () => {
+  it('admin 可以管理成员、删除问卷与维护题库', () => {
     expect(hasTenantPermission('admin', 'member:invite')).toBe(true);
     expect(hasTenantPermission('admin', 'member:remove')).toBe(true);
     expect(hasTenantPermission('admin', 'survey:delete')).toBe(true);
+    expect(hasTenantPermission('admin', 'question_bank:manage')).toBe(true);
     expect(hasTenantPermission('admin', 'audit:read')).toBe(true);
   });
 
@@ -57,6 +58,7 @@ describe('权限矩阵', () => {
     expect(hasTenantPermission('editor', 'survey:update')).toBe(true);
     expect(hasTenantPermission('editor', 'survey:publish')).toBe(true);
     expect(hasTenantPermission('editor', 'response:export')).toBe(true);
+    expect(hasTenantPermission('editor', 'question_bank:manage')).toBe(true);
     expect(hasTenantPermission('editor', 'survey:delete')).toBe(false);
     expect(hasTenantPermission('editor', 'member:invite')).toBe(false);
   });
@@ -66,9 +68,12 @@ describe('权限矩阵', () => {
       'tenant:read',
       'member:read',
       'survey:read',
+      'question_bank:read',
       'response:read',
     ]);
     expect(hasTenantPermission('viewer', 'survey:read')).toBe(true);
+    expect(hasTenantPermission('viewer', 'question_bank:read')).toBe(true);
+    expect(hasTenantPermission('viewer', 'question_bank:manage')).toBe(false);
     expect(hasTenantPermission('viewer', 'response:export')).toBe(false);
     expect(hasTenantPermission('viewer', 'survey:create')).toBe(false);
     expect(hasTenantPermission('viewer', 'survey:publish')).toBe(false);
