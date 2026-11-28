@@ -197,6 +197,25 @@ export class QuestionnaireEditorPage {
     return published ? `${formatDateTime(published.publishedAt)}（v${published.version}）` : '';
   }
 
+  /** 公开填写地址：只有已发布版本可被访问，复制按钮在未发布时禁用。 */
+  protected fillLink(): string {
+    return `${window.location.origin}/t/${this.tenantSlug}/s/${this.questionnaireId}`;
+  }
+
+  protected async copyFillLink(): Promise<void> {
+    if (!this.published()) {
+      return;
+    }
+
+    const link = this.fillLink();
+    try {
+      await navigator.clipboard.writeText(link);
+      this.message.success('填写链接已复制');
+    } catch {
+      this.message.warning(`请手动复制填写链接：${link}`);
+    }
+  }
+
   protected async saveDraft(): Promise<boolean> {
     const content = this.content();
     if (!content || this.saving()) {

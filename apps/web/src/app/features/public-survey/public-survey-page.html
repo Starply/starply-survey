@@ -1,0 +1,159 @@
+<section class="public-page">
+  @if (loading()) {
+  <p class="placeholder">正在加载问卷…</p>
+  } @else if (loadError(); as message) {
+  <section class="panel">
+    <p class="error" role="alert">{{ message }}</p>
+    <t-button variant="outline" (click)="load()">重试</t-button>
+  </section>
+  } @else if (submitted(); as result) {
+  <section class="panel success">
+    <h1>提交成功</h1>
+    <p>感谢你的填写，提交时间：{{ submittedAtText() }}</p>
+    <p class="receipt">回执编号：{{ result.responseId }}</p>
+    <t-button variant="outline" (click)="restart()">再填一份</t-button>
+  </section>
+  } @else if (survey(); as data) {
+  <header class="survey-head">
+    <h1>{{ title() || '未命名问卷' }}</h1>
+    @if (description()) {
+    <p class="description">{{ description() }}</p>
+    }
+    <div class="meta">
+      <t-tag variant="light">共 {{ totalQuestions() }} 题</t-tag>
+      <t-tag variant="light">版本 v{{ data.version }}</t-tag>
+    </div>
+  </header>
+
+  @if (issues().length > 0) {
+  <section class="panel issues" role="alert">
+    <h2>请检查以下回答</h2>
+    <ul>
+      @for (issue of issues(); track $index) {
+      <li>{{ issueText(issue) }}</li>
+      }
+    </ul>
+  </section>
+  } @if (submitError(); as message) {
+  <p class="error" role="alert">{{ message }}</p>
+  } @for (group of groups(); track group.id; let groupIndex = $index) {
+  <section class="panel group">
+    <h2>@if (group.title) { {{ groupTitle(group) }} } @else { 第 {{ groupIndex + 1 }} 部分 }</h2>
+    @if (group.description) {
+    <p class="group-description">{{ groupDescription(group) }}</p>
+    } @for (question of group.questions; track question.id; let questionIndex = $index) {
+    <article class="question">
+      <p class="question-title">
+        <span class="index">{{ groupIndex + 1 }}.{{ questionIndex + 1 }}</span>
+        <span>{{ questionTitle(question) }}</span>
+        @if (question.required === true) {
+        <span class="required" aria-label="必答">*</span>
+        }
+      </p>
+      @if (question.description) {
+      <p class="question-description">{{ questionDescription(question) }}</p>
+      } @switch (question.type) { @case ('text') {
+      <input
+        class="control"
+        type="text"
+        [value]="textValue(question.id)"
+        [placeholder]="placeholderOf(question)"
+        (input)="onTextInput(question.id, $event)"
+      />
+      } @case ('textarea') {
+      <textarea
+        class="control"
+        rows="4"
+        [value]="textValue(question.id)"
+        [placeholder]="placeholderOf(question)"
+        (input)="onTextInput(question.id, $event)"
+      ></textarea>
+      } @case ('email') {
+      <input
+        class="control"
+        type="email"
+        [value]="textValue(question.id)"
+        [placeholder]="placeholderOf(question)"
+        (input)="onTextInput(question.id, $event)"
+      />
+      } @case ('number') {
+      <input
+        class="control"
+        type="number"
+        [value]="numberText(question.id)"
+        [attr.min]="question.config.min ?? null"
+        [attr.max]="question.config.max ?? null"
+        [attr.step]="question.config.step ?? null"
+        [placeholder]="placeholderOf(question)"
+        (input)="onNumberInput(question.id, $event)"
+      />
+      } @case ('date') {
+      <input
+        class="control"
+        type="date"
+        [value]="textValue(question.id)"
+        [attr.min]="question.config.min ?? null"
+        [attr.max]="question.config.max ?? null"
+        (change)="onTextInput(question.id, $event)"
+      />
+      } @case ('single_choice') {
+      <div class="choices">
+        @for (option of question.config.options; track option.id) {
+        <label class="choice">
+          <input
+            type="radio"
+            [name]="question.id"
+            [value]="optionValue(option)"
+            [checked]="isSelected(question.id, optionValue(option))"
+            (change)="onSingleChange(question.id, optionValue(option), $event)"
+          />
+          <span>{{ optionLabel(option) }}</span>
+        </label>
+        }
+      </div>
+      } @case ('multi_choice') {
+      <div class="choices">
+        @for (option of question.config.options; track option.id) {
+        <label class="choice">
+          <input
+            type="checkbox"
+            [value]="optionValue(option)"
+            [checked]="isSelected(question.id, optionValue(option))"
+            (change)="onMultiChange(question.id, optionValue(option), $event)"
+          />
+          <span>{{ optionLabel(option) }}</span>
+        </label>
+        }
+      </div>
+      } @case ('rating') {
+      <div class="rating">
+        @for (value of ratingValues(question.config); track value) {
+        <button
+          type="button"
+          class="rating-item"
+          [class.selected]="ratingValue(question.id) === value"
+          (click)="selectRating(question.id, value)"
+        >
+          {{ value }}
+        </button>
+        }
+      </div>
+      } }
+    </article>
+    }
+  </section>
+  }
+
+  <div class="submit-bar">
+    <t-button
+      theme="primary"
+      size="large"
+      [loading]="submitting()"
+      [disabled]="submitting()"
+      (click)="submit()"
+    >
+      提交问卷
+    </t-button>
+  </div>
+  }
+</section>

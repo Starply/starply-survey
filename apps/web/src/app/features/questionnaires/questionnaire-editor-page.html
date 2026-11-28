@@ -16,6 +16,9 @@
   </div>
 
   <div class="head-actions">
+    <t-button variant="outline" [disabled]="!published()" (click)="copyFillLink()">
+      复制填写链接
+    </t-button>
     <t-button
       variant="outline"
       [loading]="saving()"
