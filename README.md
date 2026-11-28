@@ -2,7 +2,7 @@
 
 开源的现代 Web 端问卷系统。目标是使用 Angular + NestJS 构建多租户、中英双语的问卷平台，前后端同仓，使用 pnpm 组织。
 
-当前仓库处于**基础骨架阶段**：可安装、可构建、可本地启动；数据层已接入 TypeORM 并完成最小实体与迁移，认证接口（登录/刷新/登出 + Bearer 校验）已接入，业务功能尚未实现。
+当前仓库已具备可用的端到端链路：多租户登录、问卷列表与编辑器、草稿保存与发布版本固化，以及无需登录的公开填写与回答提交。问卷内核（题型模型、schema 校验、作答校验、版本语义）为纯 TypeScript，前后端共用；运营统计、条件逻辑执行与邀请流程尚未实现。
 
 ## 技术栈
 
@@ -11,7 +11,7 @@
 | 前端      | Angular 22.3.0（standalone、signals、默认 zoneless，SPA）     | 已接入                                                             |
 | 组件库    | `@tdesign-ng/components`、`styles`、`icons` 0.1.0（精确锁定） | 已接入并完成首轮 PoC                                               |
 | 后端      | NestJS 12.6.0                                                 | 已接入，健康检查 + 数据源 + 认证                                   |
-| 数据库    | MySQL 8.4 + TypeORM 1.1.3 + mysql2 3.24.6                     | 已接入，`tenant` / `user` / `membership` / `invitation` 实体与迁移 |
+| 数据库    | MySQL 8.4 + TypeORM 1.1.3 + mysql2 3.24.6                     | 已接入，租户/认证/问卷/回答实体与迁移                              |
 | 缓存/队列 | Redis 6.2+ + ioredis 6.1.0                                    | 会话存储已接入，队列未接入                                         |
 | 认证      | 服务端会话 + HS256 访问令牌；密码哈希 Argon2id                | 登录/刷新/登出与 Bearer 守卫已接入                                 |
 | 包管理    | pnpm 12.21.0 + catalog                                        | 已配置                                                             |
@@ -102,7 +102,7 @@ pnpm test             # Web（Vitest via Angular）+ API（Vitest）
 ## 数据层（TypeORM）
 
 - 版本：**TypeORM 1.1.3**、**mysql2 3.24.6**，精确锁定；不使用预发布版本。
-- 实体：`tenant`（含 `status`）、`user`、`membership`、`invitation`；迁移 `1795000000000-CreateTenant`、`1795900000000-CreateAuthTables` 已在开发库执行并验证回滚。
+- 实体：`tenant`（含 `status`）、`user`、`membership`、`invitation`、`questionnaire`、`questionnaire_version`、`survey_response`；迁移 `1795000000000-CreateTenant`、`1795900000000-CreateAuthTables`、`1796000000000-CreateQuestionnaireTables`、`1797000000000-CreateSurveyResponseTable` 已在开发库执行。
 - 连接：`apps/api/src/database/data-source-options.ts`，字符集/排序规则显式 `utf8mb4_0900_ai_ci`，`timezone: 'Z'`，连接池默认 10（`MYSQL_POOL_SIZE`），`synchronize` 永久关闭。
 - 迁移命令（在仓库根目录执行，需先配置 `apps/api/.env`）：
 
@@ -133,7 +133,33 @@ pnpm --filter @starply/api db:migration:generate src/database/migrations/AddXxx
 - `AUTH_ACCESS_TOKEN_SECRET` **必填**（缺失时 API 启动失败）；多实例必须一致，轮换会让所有已签发的访问令牌立即失效。
 - Redis 不可用时登录/刷新/登出返回 **503** `session_store_unavailable`：ioredis 配置 `enableOfflineQueue: false` + `maxRetriesPerRequest: 1`，请求快速失败并后台重连；`GET /auth/me` 只校验签名，不依赖 Redis。
 - 数据库不可用时登录返回 **503** `database_unavailable`（`DatabaseService.getDataSource()` 在未连接时即抛 503）。
-- 尚未落地：注册与邀请激活（需写 `user` / `membership`）、登录限流、前端登录页与 `/t/{slug}` 路由守卫。
+- 尚未落地：注册与邀请激活（需写 `user` / `membership`）、登录限流。
+
+## 问卷管理（/t/{slug}/questionnaires）
+
+需登录；`TenantContextGuard` 解析租户并校验成员与角色权限。
+
+| 接口                                        | 权限              | 说明                                                       |
+| ------------------------------------------- | ----------------- | ---------------------------------------------------------- |
+| `POST /t/{slug}/questionnaires`             | `survey:create`   | 创建问卷，写入空分组草稿                                   |
+| `GET /t/{slug}/questionnaires`              | `survey:read`     | 租户级列表，标题取当前草稿                                 |
+| `GET /t/{slug}/questionnaires/{id}`         | `survey:read`     | 详情：草稿 + 最新发布版本内容                              |
+| `PUT /t/{slug}/questionnaires/{id}/draft`   | `survey:update`   | 覆盖保存草稿，允许半成品                                   |
+| `POST /t/{slug}/questionnaires/{id}/publish`| `survey:publish`  | 校验草稿并生成不可变发布版本，版本号从 1 递增              |
+
+Web 端登录后进入 `/t/{slug}/questionnaires`：列表支持新建，编辑器支持分组/题目/选项维护、保存草稿、发布与校验提示；无写权限时切换为只读。
+
+## 公开填写（无鉴权）
+
+| 接口                                            | 说明                                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------------- |
+| `GET /public/t/{slug}/questionnaires/{id}`      | 返回最新已发布版本内容；租户不存在/停用或未发布时不暴露内容          |
+| `POST /public/t/{slug}/questionnaires/{id}/responses` | `{ answers, language? }` → `{ responseId, submittedAt }`，201 |
+
+- `answers` 以题目 id 为键：文本/日期/单选为字符串，数字/评分为数字，多选为字符串数组。
+- 提交前由 `@starply/questionnaire-core` 的 `validateSurveyAnswers` 校验：必答、题型匹配、选项存在性、文本长度、数值/评分/日期范围、多选数量与互斥项；未知题目会被拒绝，错误码 `answers_invalid`，`details` 为字段级问题列表。
+- 回答记录绑定提交时的发布版本（`questionnaire_version_id` + `version`），后续再发布不影响历史数据。
+- Web 填写页为 `/t/{slug}/s/{questionnaireId}`，渲染 8 种题型并支持提交回执；编辑器在已发布时可复制该链接。
 
 ## 组件库接入说明
 
@@ -160,12 +186,12 @@ pnpm --filter @starply/api db:migration:generate src/database/migrations/AddXxx
 
 ## 尚未解决的点
 
-1. Redis 与 BullMQ：ioredis 已用于会话存储，BullMQ 与缓存/队列分实例尚未接入；开发环境的 Redis（`REDIS_HOST`）当前不可达，登录写会话的链路需等 Redis 恢复后再做端到端验证。
-2. 认证：`apps/api/src/auth` 已接入 Argon2id 校验、TypeORM 用户查询、ioredis 会话存储、登录/刷新/登出控制器与 Bearer 守卫；已用开发库对登录、轮换、重放撤销、登出、停用账号做过冒烟。仍缺注册与邀请激活、登录限流、前端登录页与 `/t/{slug}` 路由守卫。问卷内核已提供领域模型、schema 校验与草稿/发布版本语义，但逻辑引擎尚未实现。
+1. Redis 与 BullMQ：ioredis 已用于会话存储并完成登录冒烟；BullMQ 与缓存/队列分实例尚未接入。
+2. 仍缺：注册与邀请激活、登录限流、问卷条件逻辑（visibleWhen/jumpRules）执行、回答统计与导出、公开填写限流与防刷。
 3. SSR/预渲染在组件库场景下未验证；当前默认 SPA。
 4. 图标清单是否覆盖首版题型仍待核对。
 5. 部署脚本（systemd/Nginx/回滚/备份）尚未落地。
-6. TypeORM 的 JSON 列、分页统计、复杂查询与多租户条件注入仍待 PoC。
+6. JSON 列已用于问卷内容与回答；回答列表分页、统计聚合与多租户条件注入仍待补齐。
 
 ## 许可
 
