@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import type { QuestionnaireDetailResponse } from '@starply/contracts';
-import { TButton, TMessageService, TQRCode, TTag } from '@tdesign-ng/components';
+import { TButton, TCard, TMessageService, TQRCode, TTag } from '@tdesign-ng/components';
 
 import { describeApiError } from '../../core/api/api-error';
 import { QuestionnaireService } from '../../core/questionnaire/questionnaire.service';
@@ -15,7 +15,7 @@ import { QuestionnaireTabs } from './questionnaire-tabs';
  */
 @Component({
   selector: 'app-questionnaire-collect-page',
-  imports: [RouterLink, QuestionnaireTabs, TButton, TQRCode, TTag],
+  imports: [RouterLink, QuestionnaireTabs, TButton, TCard, TQRCode, TTag],
   templateUrl: './questionnaire-collect-page.html',
   styleUrl: './questionnaire-collect-page.less',
 })

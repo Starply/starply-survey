@@ -12,6 +12,7 @@ import type {
 import type { TableColumn, TablePageChangeEvent, TableRow } from '@tdesign-ng/components';
 import {
   TButton,
+  TCard,
   TDialog,
   TMessageService,
   TTable,
@@ -30,7 +31,7 @@ import { QuestionnaireTabs } from './questionnaire-tabs';
  */
 @Component({
   selector: 'app-questionnaire-responses-page',
-  imports: [RouterLink, QuestionnaireTabs, TButton, TDialog, TTable, TTableCell, TTag],
+  imports: [RouterLink, QuestionnaireTabs, TButton, TCard, TDialog, TTable, TTableCell, TTag],
   templateUrl: './questionnaire-responses-page.html',
   styleUrl: './questionnaire-responses-page.less',
 })

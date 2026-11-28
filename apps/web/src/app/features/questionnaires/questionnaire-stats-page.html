@@ -16,39 +16,35 @@
 @if (loading()) {
 <p class="placeholder">正在加载统计…</p>
 } @else if (loadError(); as message) {
-<section class="panel">
+<t-card class="stats-panel" [bordered]="true" [bodyStyle]="{ padding: '20px' }">
   <p class="error" role="alert">{{ message }}</p>
   <t-button variant="outline" (click)="load()">重试</t-button>
-</section>
+</t-card>
 } @else {
 <section class="stats-grid">
-  <article class="stat-card">
+  <t-card class="stat-card" [bordered]="true" [bodyStyle]="{ padding: '18px 20px' }">
     <span class="stat-label">收集答卷</span>
     <strong class="stat-value">{{ responseCount() }}</strong>
     <span class="stat-unit">份</span>
-  </article>
-  <article class="stat-card">
+  </t-card>
+  <t-card class="stat-card" [bordered]="true" [bodyStyle]="{ padding: '18px 20px' }">
     <span class="stat-label">问卷状态</span>
     <strong class="stat-value">{{ status() === 'published' ? '已发布' : '草稿' }}</strong>
-  </article>
-  <article class="stat-card">
+  </t-card>
+  <t-card class="stat-card" [bordered]="true" [bodyStyle]="{ padding: '18px 20px' }">
     <span class="stat-label">当前版本</span>
     <strong class="stat-value">{{ versionText() }}</strong>
-  </article>
-  <article class="stat-card">
+  </t-card>
+  <t-card class="stat-card" [bordered]="true" [bodyStyle]="{ padding: '18px 20px' }">
     <span class="stat-label">最近发布</span>
     <strong class="stat-value stat-value-small">{{ lastPublishedText() }}</strong>
-  </article>
+  </t-card>
 </section>
 
-<section class="panel">
+<t-card class="stats-panel" [bordered]="true" [bodyStyle]="{ padding: '20px' }">
   <h2>题目统计</h2>
   @if (questionStats().length === 0) {
-  <p class="placeholder">
-    {{ responseCount() === 0 ?
-    '还没有答卷数据。发布问卷并收集到回答后，这里会展示各题型的统计图表。' :
-    '当前没有可统计的已发布题目。' }}
-  </p>
+  <t-empty [description]="emptyDescription()" />
   } @else {
   <div class="question-list">
     @for (item of questionStats(); track item.questionId) {
@@ -69,5 +65,5 @@
     }
   </div>
   }
-</section>
+</t-card>
 }

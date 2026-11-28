@@ -12,9 +12,11 @@ import type {
 } from '@tdesign-ng/components';
 import {
   TButton,
+  TCard,
   TDialog,
   TInput,
   TMessageService,
+  TPopconfirm,
   TSelect,
   TTable,
   TTableCell,
@@ -34,7 +36,18 @@ type StatusFilter = 'all' | QuestionnaireStatus;
  */
 @Component({
   selector: 'app-questionnaire-list-page',
-  imports: [RouterLink, TButton, TDialog, TInput, TSelect, TTable, TTableCell, TTag],
+  imports: [
+    RouterLink,
+    TButton,
+    TCard,
+    TDialog,
+    TInput,
+    TPopconfirm,
+    TSelect,
+    TTable,
+    TTableCell,
+    TTag,
+  ],
   templateUrl: './questionnaire-list-page.html',
   styleUrl: './questionnaire-list-page.less',
 })
@@ -49,7 +62,6 @@ export class QuestionnaireListPage {
   protected readonly loading = signal(true);
   protected readonly loadError = signal<string | null>(null);
   protected readonly deletingId = signal<string | null>(null);
-  protected readonly pendingDelete = signal<QuestionnaireSummaryResponse | null>(null);
 
   // 搜索条件：草稿值在点击「查询」后才生效，重置会同时清空输入。
   protected readonly keywordDraft = signal('');
@@ -189,23 +201,12 @@ export class QuestionnaireListPage {
     }
   }
 
-  protected requestDelete(item: QuestionnaireSummaryResponse): void {
+  protected deleteConfirmText(item: QuestionnaireSummaryResponse): string {
+    return `确定删除问卷「${this.titleOf(item)}」？已发布版本与回答将一并删除，且不可恢复。`;
+  }
+
+  protected async confirmDelete(item: QuestionnaireSummaryResponse): Promise<void> {
     if (this.deletingId()) {
-      return;
-    }
-
-    this.pendingDelete.set(item);
-  }
-
-  protected closeDeleteDialog(visible: boolean): void {
-    if (!visible && this.deletingId() === null) {
-      this.pendingDelete.set(null);
-    }
-  }
-
-  protected async confirmDelete(): Promise<void> {
-    const item = this.pendingDelete();
-    if (!item || this.deletingId()) {
       return;
     }
 
@@ -213,7 +214,6 @@ export class QuestionnaireListPage {
     try {
       await this.questionnaires.remove(this.tenantSlug, item.id);
       this.items.update((items) => items.filter((current) => current.id !== item.id));
-      this.pendingDelete.set(null);
       this.message.success('问卷已删除');
     } catch (error) {
       this.message.error(describeApiError(error));

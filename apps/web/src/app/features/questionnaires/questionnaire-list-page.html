@@ -6,7 +6,7 @@
   <t-button theme="primary" (click)="openCreate()">新建问卷</t-button>
 </section>
 
-<section class="panel filter-card">
+<t-card class="filter-card" [bordered]="true" [bodyStyle]="{ padding: '16px 20px' }">
   <div class="filter-bar">
     <t-input
       class="filter-keyword"
@@ -24,13 +24,13 @@
     <t-button variant="outline" (click)="resetFilters()">重置</t-button>
     <t-button variant="text" [loading]="loading()" (click)="load()">刷新</t-button>
   </div>
-</section>
+</t-card>
 
 @if (loadError(); as message) {
 <p class="error" role="alert">{{ message }}</p>
 }
 
-<section class="panel table-card">
+<t-card class="table-card" [bordered]="true" [bodyStyle]="{ padding: '16px 20px 12px' }">
   <div class="table-head">
     <h2>全部问卷</h2>
     <span class="count">共 {{ filteredItems().length }} 份</span>
@@ -76,19 +76,22 @@
         >
           复制链接
         </t-button>
-        <t-button
-          variant="text"
+        <t-popconfirm
           theme="danger"
-          size="small"
-          [disabled]="deletingId() !== null"
-          (click)="requestDelete(row)"
+          [content]="deleteConfirmText(row)"
+          [confirmBtn]="{ content: '确认删除', theme: 'danger', loading: deletingId() === row.id }"
+          (confirm)="confirmDelete(row)"
         >
-          删除
-        </t-button>
+          <span>
+            <t-button variant="text" theme="danger" size="small" [disabled]="deletingId() !== null">
+              删除
+            </t-button>
+          </span>
+        </t-popconfirm>
       </div>
     </ng-template>
   </t-table>
-</section>
+</t-card>
 
 <t-dialog
   header="新建问卷"
@@ -137,22 +140,5 @@
 
   @if (formError(); as message) {
   <p class="error" role="alert">{{ message }}</p>
-  }
-</t-dialog>
-
-<t-dialog
-  header="删除问卷"
-  [visible]="pendingDelete() !== null"
-  [confirmLoading]="deletingId() !== null"
-  confirmBtn="确认删除"
-  [closeOnOverlayClick]="deletingId() === null"
-  [closeOnEscKeydown]="deletingId() === null"
-  (visibleChange)="closeDeleteDialog($event)"
-  (confirm)="confirmDelete()"
->
-  @if (pendingDelete(); as item) {
-  <p class="confirm-text">
-    确定删除问卷「{{ titleOf(item) }}」？已发布版本与回答将一并删除，且不可恢复。
-  </p>
   }
 </t-dialog>

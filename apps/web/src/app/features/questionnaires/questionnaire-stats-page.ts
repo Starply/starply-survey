@@ -7,7 +7,7 @@ import type {
   QuestionStatsResponse,
 } from '@starply/contracts';
 import type { EChartsOption } from 'echarts';
-import { TButton, TTag } from '@tdesign-ng/components';
+import { TButton, TCard, TEmpty, TTag } from '@tdesign-ng/components';
 
 import { describeApiError } from '../../core/api/api-error';
 import { QuestionnaireService } from '../../core/questionnaire/questionnaire.service';
@@ -22,7 +22,7 @@ import { QuestionnaireTabs } from './questionnaire-tabs';
  */
 @Component({
   selector: 'app-questionnaire-stats-page',
-  imports: [RouterLink, QuestionnaireTabs, EChart, TButton, TTag],
+  imports: [RouterLink, QuestionnaireTabs, EChart, TButton, TCard, TEmpty, TTag],
   templateUrl: './questionnaire-stats-page.html',
   styleUrl: './questionnaire-stats-page.less',
 })
@@ -61,6 +61,11 @@ export class QuestionnaireStatsPage {
       option: buildChartOption(question, language),
     }));
   });
+  protected readonly emptyDescription = computed(() =>
+    this.responseCount() === 0
+      ? '还没有答卷数据。发布问卷并收集到回答后，这里会展示各题型的统计图表。'
+      : '当前没有可统计的已发布题目。',
+  );
 
   constructor() {
     void this.load();

@@ -188,14 +188,14 @@
 
 | 页面 | 已可用 | 需要补/验证 |
 | --- | --- | --- |
-| 列表 | Table、Pagination、Select、Input、Button、Tag、Message | Dropdown、Popconfirm、Table 选择列 |
+| 列表 | Card、Table、Pagination、Select、Input、Button、Tag、Message、Popconfirm | Dropdown、Table 选择列 |
 | 设计页 | Button、Input、Textarea、Tag | Tabs、InputNumber、Upload、DatePicker、Tree/List、Drawer |
-| 统计页 | Button、Tag、TMenu、ECharts | Tabs、Statistic、Empty |
-| 收集页 | Button、Input、Message、QRCode | Tabs |
-| 数据页 | Table、Pagination、Input、Button | DateRangePicker、Checkbox、Popconfirm、导出 |
+| 统计页 | Tabs、Card、Empty、ECharts | Statistic |
+| 收集页 | Tabs、Card、QRCode、Button、Message | — |
+| 数据页 | Tabs、Card、Table、Pagination、Button、Dialog | DateRangePicker、Checkbox、Popconfirm、导出 |
 | 外壳 | Button、Tag、TMenu | Dropdown、Avatar |
 
-已知阻塞：`TCard` 在 npm 0.1.1 中内容投影不渲染，暂用 TDesign 令牌样式面板替代。
+0.2.0 已修复 `TCard` 内容投影问题，列表、统计、收集与原始数据页已改用 `TCard` 作为容器；问卷上下文页签改用 `TTabs`，删除确认改用 `TPopconfirm`。
 
 图表库已确定为 ECharts（项目没有 TDesign Charts）。统计页按需加载 ECharts，只引入用到的图表类型，避免增大初始包。
 
@@ -223,12 +223,13 @@
 
 - 顶部导航改用 TDesign `TMenu`，根据当前路由同步选中态。
 - Web 切换为 hash 路由，公开填写链接统一带 `#`。
-- 问卷列表增加答卷数、创建时间，删除改为 TDesign 对话框确认。
-- 单份问卷增加「设计 / 统计 / 收集 / 原始数据」页签。
+- 问卷列表增加答卷数、创建时间，删除改为 `TPopconfirm` 气泡确认。
+- 单份问卷增加「设计 / 统计 / 收集 / 原始数据」页签，使用 `TTabs` 数据驱动导航。
 - 答卷收集页：已发布时展示链接、复制、打开与前端 `TQRCode` 二维码；草稿状态给出发布引导。
 - 数据统计页：展示答卷数、状态、当前版本与最近发布时间；已发布问卷按题型用 ECharts 展示选择题与评分题分布，文本题展示作答数。
 - 原始数据页：分页表格 + 按题字段化查看单份答卷 + 导出 CSV（UTF-8 BOM，选择题映射选项文案）。
 - API 新增 `GET /t/{slug}/questionnaires/{id}/stats`、`GET .../responses` 与 `GET .../responses/export`，列表返回 `responseCount`；统计响应包含按题聚合的 `questions`。
+- `@tdesign-ng/*` 升级到 `0.2.0`，修复 `TCard` 内容投影；列表、统计、收集与原始数据页改用 `TCard`，统计空状态改用 `TEmpty`。
 
 待继续：
 

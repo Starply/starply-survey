@@ -14,8 +14,10 @@ import type {
 } from '@tdesign-ng/components';
 import {
   TButton,
+  TCard,
   TInput,
   TMessageService,
+  TPopconfirm,
   TSelect,
   TTable,
   TTableCell,
@@ -35,7 +37,7 @@ type TypeFilter = 'all' | QuestionType;
  */
 @Component({
   selector: 'app-question-bank-list-page',
-  imports: [RouterLink, TButton, TInput, TSelect, TTable, TTableCell, TTag],
+  imports: [RouterLink, TButton, TCard, TInput, TPopconfirm, TSelect, TTable, TTableCell, TTag],
   templateUrl: './question-bank-list-page.html',
   styleUrl: './question-bank-list-page.less',
 })
@@ -172,13 +174,12 @@ export class QuestionBankListPage {
     return textFor(text, 'zh-CN');
   }
 
+  protected deleteConfirmText(item: QuestionBankItemSummaryResponse): string {
+    return `确定删除题库条目「${this.titleOf(item)}」？此操作不可恢复。`;
+  }
+
   protected async remove(item: QuestionBankItemSummaryResponse): Promise<void> {
     if (this.deletingId()) {
-      return;
-    }
-
-    const title = this.titleOf(item);
-    if (!window.confirm(`确定删除题库条目「${title}」？此操作不可恢复。`)) {
       return;
     }
 

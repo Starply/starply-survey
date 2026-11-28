@@ -13,7 +13,7 @@
 
 <app-questionnaire-tabs [tenantSlug]="tenantSlug" [questionnaireId]="questionnaireId" />
 
-<section class="panel">
+<t-card class="panel" [bordered]="true" [bodyStyle]="{ padding: '16px 20px' }">
   <div class="table-head">
     <h2>原始数据</h2>
     <div class="table-actions">
@@ -52,7 +52,7 @@
     </ng-template>
   </t-table>
   }
-</section>
+</t-card>
 
 <t-dialog
   header="答卷详情"

@@ -16,12 +16,12 @@
 @if (loading()) {
 <p class="placeholder">正在加载问卷…</p>
 } @else if (loadError(); as message) {
-<section class="panel">
+<t-card class="panel" [bordered]="true" [bodyStyle]="{ padding: '20px' }">
   <p class="error" role="alert">{{ message }}</p>
   <t-button variant="outline" (click)="load()">重试</t-button>
-</section>
+</t-card>
 } @else {
-<section class="panel">
+<t-card class="panel" [bordered]="true" [bodyStyle]="{ padding: '20px' }">
   <h2>答卷地址</h2>
 
   @if (published()) {
@@ -42,5 +42,5 @@
     去发布 →
   </a>
   }
-</section>
+</t-card>
 }
