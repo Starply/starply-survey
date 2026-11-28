@@ -2,19 +2,19 @@
 
 开源的现代 Web 端问卷系统。目标是使用 Angular + NestJS 构建多租户、中英双语的问卷平台，前后端同仓，使用 pnpm 组织。
 
-当前仓库已具备可用的端到端链路：多租户登录、问卷列表与编辑器、草稿保存与发布版本固化，以及无需登录的公开填写与回答提交。问卷内核（题型模型、schema 校验、作答校验、版本语义）为纯 TypeScript，前后端共用；运营统计、条件逻辑执行与邀请流程尚未实现。
+当前仓库已具备可用的端到端链路：多租户登录、顶栏式管理端布局、问卷列表与 CRUD、题库管理、编辑器、草稿保存与发布版本固化，以及无需登录的公开填写与回答提交。问卷内核（题型模型、schema 校验、作答校验、版本语义）为纯 TypeScript，前后端共用；运营统计、条件逻辑执行与邀请流程尚未实现。
 
 ## 技术栈
 
-| 层        | 选型                                                          | 当前状态                                                           |
-| --------- | ------------------------------------------------------------- | ------------------------------------------------------------------ |
-| 前端      | Angular 22.3.0（standalone、signals、默认 zoneless，SPA）     | 已接入                                                             |
-| 组件库    | `@tdesign-ng/components`、`styles`、`icons` 0.1.0（精确锁定） | 已接入并完成首轮 PoC                                               |
-| 后端      | NestJS 12.6.0                                                 | 已接入，健康检查 + 数据源 + 认证                                   |
-| 数据库    | MySQL 8.4 + TypeORM 1.1.3 + mysql2 3.24.6                     | 已接入，租户/认证/问卷/回答实体与迁移                              |
-| 缓存/队列 | Redis 6.2+ + ioredis 6.1.0                                    | 会话存储已接入，队列未接入                                         |
-| 认证      | 服务端会话 + HS256 访问令牌；密码哈希 Argon2id                | 登录/刷新/登出与 Bearer 守卫已接入                                 |
-| 包管理    | pnpm 12.21.0 + catalog                                        | 已配置                                                             |
+| 层        | 选型                                                          | 当前状态                              |
+| --------- | ------------------------------------------------------------- | ------------------------------------- |
+| 前端      | Angular 22.3.0（standalone、signals、默认 zoneless，SPA）     | 已接入                                |
+| 组件库    | `@tdesign-ng/components`、`styles`、`icons` 0.1.0（精确锁定） | 已接入并完成首轮 PoC                  |
+| 后端      | NestJS 12.6.0                                                 | 已接入，健康检查 + 数据源 + 认证      |
+| 数据库    | MySQL 8.4 + TypeORM 1.1.3 + mysql2 3.24.6                     | 已接入，租户/认证/问卷/回答实体与迁移 |
+| 缓存/队列 | Redis 6.2+ + ioredis 6.1.0                                    | 会话存储已接入，队列未接入            |
+| 认证      | 服务端会话 + HS256 访问令牌；密码哈希 Argon2id                | 登录/刷新/登出与 Bearer 守卫已接入    |
+| 包管理    | pnpm 12.21.0 + catalog                                        | 已配置                                |
 
 版本生命周期与决策依据见 [技术可行性评估](docs/technical-feasibility-assessment.md)。
 
@@ -70,6 +70,20 @@ pnpm dev:api
 
 开发端口：Web 为 **5200**，API 为 **25200**。Web 开发服务器通过 [proxy.conf.json](apps/web/proxy.conf.json) 把 `/api/*` 转发到 `http://127.0.0.1:25200` 并去掉 `/api` 前缀，例如 `/api/health` → `/health`。
 
+### 默认账号（本地演示）
+
+`pnpm --filter @starply/api db:seed:demo` 使用集中的默认账号配置创建演示租户与 owner，脚本幂等（存在则更新密码与角色）：
+
+| 配置项    | 环境变量                       | 开发默认值         |
+| --------- | ------------------------------ | ------------------ |
+| 租户 slug | `DEFAULT_ACCOUNT_TENANT_SLUG`  | `acme`             |
+| 租户名称  | `DEFAULT_ACCOUNT_TENANT_NAME`  | `{slug} 演示租户`  |
+| 登录邮箱  | `DEFAULT_ACCOUNT_EMAIL`        | `demo@starply.dev` |
+| 登录密码  | `DEFAULT_ACCOUNT_PASSWORD`     | `Starply@2026`     |
+| 显示名称  | `DEFAULT_ACCOUNT_DISPLAY_NAME` | `演示管理员`       |
+
+读取优先级为 `DEFAULT_ACCOUNT_*` > 旧版 `DEMO_*` > 内置开发默认值，逻辑集中在 [configuration.ts](apps/api/src/config/configuration.ts)。生产环境必须显式覆盖账号与密码，避免使用开发默认值。
+
 健康检查：
 
 - `GET /health`、`GET /health/live`：liveness，只表示进程可用，不依赖数据库。
@@ -102,7 +116,7 @@ pnpm test             # Web（Vitest via Angular）+ API（Vitest）
 ## 数据层（TypeORM）
 
 - 版本：**TypeORM 1.1.3**、**mysql2 3.24.6**，精确锁定；不使用预发布版本。
-- 实体：`tenant`（含 `status`）、`user`、`membership`、`invitation`、`questionnaire`、`questionnaire_version`、`survey_response`；迁移 `1795000000000-CreateTenant`、`1795900000000-CreateAuthTables`、`1796000000000-CreateQuestionnaireTables`、`1797000000000-CreateSurveyResponseTable` 已在开发库执行。
+- 实体：`tenant`（含 `status`）、`user`、`membership`、`invitation`、`questionnaire`、`questionnaire_version`、`survey_response`、`question_bank_item`；迁移 `1795000000000-CreateTenant`、`1795900000000-CreateAuthTables`、`1796000000000-CreateQuestionnaireTables`、`1797000000000-CreateSurveyResponseTable`、`1798000000000-CreateQuestionBankItemTable` 已在开发库执行。
 - 连接：`apps/api/src/database/data-source-options.ts`，字符集/排序规则显式 `utf8mb4_0900_ai_ci`，`timezone: 'Z'`，连接池默认 10（`MYSQL_POOL_SIZE`），`synchronize` 永久关闭。
 - 迁移命令（在仓库根目录执行，需先配置 `apps/api/.env`）：
 
@@ -139,21 +153,37 @@ pnpm --filter @starply/api db:migration:generate src/database/migrations/AddXxx
 
 需登录；`TenantContextGuard` 解析租户并校验成员与角色权限。
 
-| 接口                                        | 权限              | 说明                                                       |
-| ------------------------------------------- | ----------------- | ---------------------------------------------------------- |
-| `POST /t/{slug}/questionnaires`             | `survey:create`   | 创建问卷，写入空分组草稿                                   |
-| `GET /t/{slug}/questionnaires`              | `survey:read`     | 租户级列表，标题取当前草稿                                 |
-| `GET /t/{slug}/questionnaires/{id}`         | `survey:read`     | 详情：草稿 + 最新发布版本内容                              |
-| `PUT /t/{slug}/questionnaires/{id}/draft`   | `survey:update`   | 覆盖保存草稿，允许半成品                                   |
-| `POST /t/{slug}/questionnaires/{id}/publish`| `survey:publish`  | 校验草稿并生成不可变发布版本，版本号从 1 递增              |
+| 接口                                         | 权限             | 说明                                          |
+| -------------------------------------------- | ---------------- | --------------------------------------------- |
+| `POST /t/{slug}/questionnaires`              | `survey:create`  | 创建问卷，写入空分组草稿                      |
+| `GET /t/{slug}/questionnaires`               | `survey:read`    | 租户级列表，标题取当前草稿                    |
+| `GET /t/{slug}/questionnaires/{id}`          | `survey:read`    | 详情：草稿 + 最新发布版本内容                 |
+| `PUT /t/{slug}/questionnaires/{id}/draft`    | `survey:update`  | 覆盖保存草稿，允许半成品                      |
+| `POST /t/{slug}/questionnaires/{id}/publish` | `survey:publish` | 校验草稿并生成不可变发布版本，版本号从 1 递增 |
+| `DELETE /t/{slug}/questionnaires/{id}`       | `survey:delete`  | 删除问卷，版本与回答级联删除；成功返回 204    |
 
-Web 端登录后进入 `/t/{slug}/questionnaires`：列表支持新建，编辑器支持分组/题目/选项维护、保存草稿、发布与校验提示；无写权限时切换为只读。
+Web 管理端采用常规中后台布局：顶部菜单（问卷管理 / 题库）与下方内容区。问卷列表为表格视图，支持新建、编辑、复制已发布问卷的填写链接与删除；编辑器支持分组/题目/选项维护、保存草稿、发布与校验提示；无写权限时切换为只读。
+
+## 题库（/t/{slug}/question-bank-items）
+
+需登录；题库条目是可复用的题目模板，直接复用 question-core 的 8 种题型模型。
+
+| 接口                                        | 权限                   | 说明                                                |
+| ------------------------------------------- | ---------------------- | --------------------------------------------------- |
+| `POST /t/{slug}/question-bank-items`        | `question_bank:manage` | 创建条目：type、title、description?、config?、tags? |
+| `GET /t/{slug}/question-bank-items`         | `question_bank:read`   | 租户级列表，不含 config，按更新时间倒序             |
+| `GET /t/{slug}/question-bank-items/{id}`    | `question_bank:read`   | 详情，包含题型配置                                  |
+| `PUT /t/{slug}/question-bank-items/{id}`    | `question_bank:manage` | 局部更新；description/tags 传 null 表示清空         |
+| `DELETE /t/{slug}/question-bank-items/{id}` | `question_bank:manage` | 删除条目；成功返回 204                              |
+
+- 权限：owner/admin/editor 可维护题库；viewer 只读。
+- Web 入口为顶栏「题库」：列表支持新建、编辑、删除；编辑器可选择题型、维护标题/描述/标签，并提供选择题选项、评分范围、数字范围等基础配置。
 
 ## 公开填写（无鉴权）
 
-| 接口                                            | 说明                                                                 |
-| ----------------------------------------------- | -------------------------------------------------------------------- |
-| `GET /public/t/{slug}/questionnaires/{id}`      | 返回最新已发布版本内容；租户不存在/停用或未发布时不暴露内容          |
+| 接口                                                  | 说明                                                          |
+| ----------------------------------------------------- | ------------------------------------------------------------- |
+| `GET /public/t/{slug}/questionnaires/{id}`            | 返回最新已发布版本内容；租户不存在/停用或未发布时不暴露内容   |
 | `POST /public/t/{slug}/questionnaires/{id}/responses` | `{ answers, language? }` → `{ responseId, submittedAt }`，201 |
 
 - `answers` 以题目 id 为键：文本/日期/单选为字符串，数字/评分为数字，多选为字符串数组。
