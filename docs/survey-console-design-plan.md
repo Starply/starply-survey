@@ -1,26 +1,27 @@
 # 问卷管理端页面与交互设计计划（参考调问网）
 
 > 状态：参考调研 + 设计稿（2026-11-28）。
-> 调研方式：登录 <https://oss.diaowen.cn/> 只读浏览现有「测试问卷」，未新建、修改、发布或删除任何数据。
+> 调研方式：登录参考项目，只读浏览现有「测试问卷」，未新建、修改、发布或删除任何数据。
 > 相关文档：[tdesign-ng 组件现状与改造优先级](tdesign-ng-component-priority.md)、[技术可行性评估](technical-feasibility-assessment.md)。
 
 ## 1. 调研对象与限制
 
 用现有「测试问卷」（设计中、0 份答卷、未发布）走查了以下页面：
 
-| 页面 | 参考地址 | 观察结果 |
-| --- | --- | --- |
-| 我的问卷 | `/#/v6/lr/dw/survey` | 筛选 + 表格 + 分页，行操作较多 |
-| 问卷设计 | `/#/v6/diaowen/dw-design/survey/{id}` | 顶部上下文导航 + 题型/画布/设置三栏 |
-| 数据统计 | `/#/v6/lr/dw/survey/d/chart/{id}` | 概览卡 + 统计/原始数据子页签，0 答卷时图表为空 |
-| 答卷收集 | `/#/v6/lr/dw/survey/c/url/{id}` | 答卷链接、复制/打开、二维码下载 |
-| 原始数据 | `/#/v6/lr/dw/survey/d/data/{id}` | 时间/IP/城市筛选 + 导出 + 数据表格 |
-| 公开填写页 | `/#/v6/diaowen/an/{code}` | 问卷未发布，仅显示「问卷未开启」 |
+| 页面 | 观察结果 |
+| --- | --- |
+| 我的问卷 | 筛选 + 表格 + 分页，行操作较多 |
+| 问卷设计 | 顶部上下文导航 + 题型/画布/设置三栏 |
+| 数据统计 | 概览卡 + 统计/原始数据子页签，0 答卷时图表为空 |
+| 答卷收集 | 答卷链接、复制/打开、二维码下载 |
+| 原始数据 | 时间/IP/城市筛选 + 导出 + 数据表格 |
+| 公开填写页 | 问卷未发布，仅显示「问卷未开启」 |
 
 限制说明：
 
 - 该问卷没有题目且未发布，无法观察真实题目卡片和公开填写体验；为遵守只读要求，没有添加题目或发布。
 - 只借鉴功能、信息架构和上下布局，不借鉴其 Element Plus 视觉和左侧全局菜单；样式统一使用 TDesign。
+- 路由和 URL 结构完全按本项目规范设计，不照搬参考项目的地址形式。
 - 「上下布局」指参考项目的「上下经典布局」：顶部 header，下方内容区；编辑器内部仍可按题型/画布/设置分栏，不引入全局左侧导航。
 
 ## 2. 参考页面拆解
@@ -113,15 +114,16 @@
 ## 4. 目标信息架构
 
 ```text
-/t/:slug/questionnaires                     问卷列表
-/t/:slug/questionnaires/:id/design          问卷设计（默认）
-/t/:slug/questionnaires/:id/stats           数据统计
-/t/:slug/questionnaires/:id/collect         答卷收集
-/t/:slug/questionnaires/:id/data            原始数据
-/t/:slug/s/:id                              公开填写
+/t/:tenantSlug/questionnaires                              问卷列表
+/t/:tenantSlug/questionnaires/:questionnaireId             问卷设计（现有入口）
+/t/:tenantSlug/questionnaires/:questionnaireId/stats       数据统计
+/t/:tenantSlug/questionnaires/:questionnaireId/collect     答卷收集
+/t/:tenantSlug/questionnaires/:questionnaireId/responses   原始数据
+/t/:tenantSlug/s/:questionnaireId                          公开填写
 ```
 
-- 保留现有 `/questionnaires/:id`，内部重定向到 `/design`，避免旧链接失效。
+- 路由沿用项目现有的 `/t/:tenantSlug` 租户前缀和 Angular Router 普通路径参数，不使用参考项目的 hash 路由。
+- 现有 `/questionnaires/:questionnaireId` 继续作为设计页入口，不额外增加 `/design` 层级，避免旧链接失效。
 - 顶部全局菜单仍然是「问卷管理 / 题库」；进入单份问卷后显示问卷上下文 header + 页签。
 - 设计页三栏在窄屏下折叠：右栏设置收进 Drawer 或页签，左栏题型变为横向滚动。
 
