@@ -77,12 +77,12 @@ pnpm dev:api
 | 配置项    | 环境变量                       | 开发默认值         |
 | --------- | ------------------------------ | ------------------ |
 | 租户 slug | `DEFAULT_ACCOUNT_TENANT_SLUG`  | `acme`             |
-| 租户名称  | `DEFAULT_ACCOUNT_TENANT_NAME`  | `{slug} 演示租户`  |
+| 租户名称  | `DEFAULT_ACCOUNT_TENANT_NAME`  | `Acme 演示租户`    |
 | 登录邮箱  | `DEFAULT_ACCOUNT_EMAIL`        | `demo@starply.dev` |
 | 登录密码  | `DEFAULT_ACCOUNT_PASSWORD`     | `Starply@2026`     |
 | 显示名称  | `DEFAULT_ACCOUNT_DISPLAY_NAME` | `演示管理员`       |
 
-读取优先级为 `DEFAULT_ACCOUNT_*` > 旧版 `DEMO_*` > 内置开发默认值，逻辑集中在 [configuration.ts](apps/api/src/config/configuration.ts)。生产环境必须显式覆盖账号与密码，避免使用开发默认值。
+开发默认值集中在 [dev-fixtures](packages/dev-fixtures/src/index.ts)，前端登录页与后端 seed 共用这一份配置：开发构建会预填租户、邮箱与密码，生产构建通过 `environment.production.ts` 替换，不会把测试凭据打进前端包。读取优先级为 `DEFAULT_ACCOUNT_*` > 旧版 `DEMO_*` > 开发默认值；生产环境不读取开发默认值，必须显式配置账号与密码。
 
 健康检查：
 
@@ -153,16 +153,18 @@ pnpm --filter @starply/api db:migration:generate src/database/migrations/AddXxx
 
 需登录；`TenantContextGuard` 解析租户并校验成员与角色权限。
 
-| 接口                                         | 权限             | 说明                                          |
-| -------------------------------------------- | ---------------- | --------------------------------------------- |
-| `POST /t/{slug}/questionnaires`              | `survey:create`  | 创建问卷，写入空分组草稿                      |
-| `GET /t/{slug}/questionnaires`               | `survey:read`    | 租户级列表，标题取当前草稿                    |
-| `GET /t/{slug}/questionnaires/{id}`          | `survey:read`    | 详情：草稿 + 最新发布版本内容                 |
-| `PUT /t/{slug}/questionnaires/{id}/draft`    | `survey:update`  | 覆盖保存草稿，允许半成品                      |
-| `POST /t/{slug}/questionnaires/{id}/publish` | `survey:publish` | 校验草稿并生成不可变发布版本，版本号从 1 递增 |
-| `DELETE /t/{slug}/questionnaires/{id}`       | `survey:delete`  | 删除问卷，版本与回答级联删除；成功返回 204    |
+| 接口                                          | 权限             | 说明                                          |
+| --------------------------------------------- | ---------------- | --------------------------------------------- |
+| `POST /t/{slug}/questionnaires`               | `survey:create`  | 创建问卷，写入空分组草稿                      |
+| `GET /t/{slug}/questionnaires`                | `survey:read`    | 租户级列表，标题取当前草稿                    |
+| `GET /t/{slug}/questionnaires/{id}`           | `survey:read`    | 详情：草稿 + 最新发布版本内容                 |
+| `PUT /t/{slug}/questionnaires/{id}/draft`     | `survey:update`  | 覆盖保存草稿，允许半成品                      |
+| `POST /t/{slug}/questionnaires/{id}/publish`  | `survey:publish` | 校验草稿并生成不可变发布版本，版本号从 1 递增 |
+| `GET /t/{slug}/questionnaires/{id}/stats`     | `survey:read`    | 统计概览：答卷数、发布版本与最近发布时间      |
+| `GET /t/{slug}/questionnaires/{id}/responses` | `survey:read`    | 原始答卷分页，默认 20 条，最大 100 条         |
+| `DELETE /t/{slug}/questionnaires/{id}`        | `survey:delete`  | 删除问卷，版本与回答级联删除；成功返回 204    |
 
-Web 管理端采用常规中后台布局：顶部菜单（问卷管理 / 题库）与下方内容区。问卷列表为表格视图，支持新建、编辑、复制已发布问卷的填写链接与删除；编辑器支持分组/题目/选项维护、保存草稿、发布与校验提示；无写权限时切换为只读。
+Web 管理端采用常规中后台布局：顶部菜单（问卷管理 / 题库）与下方内容区，路由使用 hash 模式。问卷列表为表格视图，支持搜索、状态筛选、新建、编辑、复制填写链接与删除；进入单份问卷后有「设计 / 统计 / 收集 / 原始数据」页签，收集页使用前端 `TQRCode` 生成二维码，原始数据页可查看单份答案。
 
 ## 题库（/t/{slug}/question-bank-items）
 

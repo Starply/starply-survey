@@ -190,12 +190,16 @@
 | --- | --- | --- |
 | 列表 | Table、Pagination、Select、Input、Button、Tag、Message | Dropdown、Popconfirm、Table 选择列 |
 | 设计页 | Button、Input、Textarea、Tag | Tabs、InputNumber、Upload、DatePicker、Tree/List、Drawer |
-| 统计页 | Button、Tag | Tabs、Statistic、Empty、图表库 |
+| 统计页 | Button、Tag | Tabs、Statistic、Empty、ECharts |
 | 收集页 | Button、Input、Message | Tabs、QRCode |
 | 数据页 | Table、Pagination、Input、Button | DateRangePicker、Checkbox、Popconfirm、导出 |
 | 外壳 | Button、Tag | Menu/Dropdown、Avatar |
 
 已知阻塞：`TCard` 在 npm 0.1.1 中内容投影不渲染，暂用 TDesign 令牌样式面板替代。
+
+图表库已确定为 ECharts（项目没有 TDesign Charts）。统计页按需加载 ECharts，只引入用到的图表类型，避免增大初始包。
+
+二维码已确定优先使用前端 TDesign `TQRCode` 直接生成；只有前端组件无法满足的场景（如服务端批量出图、离线打印）再改用后端生成。
 
 ## 8. 分阶段实施计划
 
@@ -208,9 +212,25 @@
 
 ## 9. 待确认问题
 
-1. 图表库选型：ECharts、TDesign Charts，还是先用简单统计卡片？
-2. 导出是同步 CSV 还是异步任务？单次导出上限多少？
-3. 二维码前端生成还是服务端返回图片？
-4. 统计/原始数据对 `viewer` 是否可见，还是只对 `owner/admin/editor` 开放？
-5. 现有编辑器是「分组 + 题目」模型，参考项目是扁平题目；大纲如何映射分组？
-6. 需要一份已发布、含题目的问卷才能继续观察真实编辑器和公开填写页；需用户侧提供或授权。
+1. 导出是同步 CSV 还是异步任务？单次导出上限多少？
+2. 统计/原始数据对 `viewer` 是否可见，还是只对 `owner/admin/editor` 开放？
+3. 现有编辑器是「分组 + 题目」模型，参考项目是扁平题目；大纲如何映射分组？
+4. 需要一份已发布、含题目的问卷才能继续观察真实编辑器和公开填写页；需用户侧提供或授权。
+
+## 10. 实施进度（2026-11-28）
+
+已完成：
+
+- Web 切换为 hash 路由，公开填写链接统一带 `#`。
+- 问卷列表增加答卷数、创建时间，删除改为 TDesign 对话框确认。
+- 单份问卷增加「设计 / 统计 / 收集 / 原始数据」页签。
+- 答卷收集页：已发布时展示链接、复制、打开与前端 `TQRCode` 二维码；草稿状态给出发布引导。
+- 数据统计页：展示答卷数、状态、当前版本与最近发布时间；图表区暂为空状态。
+- 原始数据页：分页表格 + 单份答卷 JSON 查看。
+- API 新增 `GET /t/{slug}/questionnaires/{id}/stats` 与 `GET .../responses`，列表返回 `responseCount`。
+
+待继续：
+
+- 统计页接入 ECharts，按题型输出图表。
+- 原始数据的时间/IP 筛选、导出与单份答卷详情字段化展示。
+- 编辑器改为「题型面板 / 画布 / 设置」三栏，并补题目大纲与拖拽排序。

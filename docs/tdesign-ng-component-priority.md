@@ -41,7 +41,7 @@
 | 问卷编辑器 | Button、Input、Textarea、Tag、Message | Tabs（大纲/设置）、InputNumber（评分）、Upload（上传题）、DatePicker（日期题）、Tree/List（题目大纲）、Drawer（移动端设置） |
 | 题库编辑页 | Button、Input、Textarea、Message | InputNumber、TagInput、Tabs |
 | 登录 / 公开填写 | Input、Button、Message | Form 校验、Radio / Checkbox 题型组件（当前公开页为原生控件） |
-| 数据统计 | — | Tabs、Statistic、Empty、图表库（待选型） |
+| 数据统计 | — | Tabs、Statistic、Empty、ECharts |
 | 答卷收集 | — | Tabs、QRCode、Button、Message（复制链接/打开问卷） |
 | 原始数据 | — | Table、DateRangePicker、Input、Checkbox、Popconfirm、导出按钮 |
 
